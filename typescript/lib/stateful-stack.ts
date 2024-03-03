@@ -18,16 +18,16 @@ export class StateFulStack extends cdk.Stack {
 
       //rds
       const db = new rds.DatabaseInstance(this, `${clientPrefix}-rds`, {
-        engine: rds.DatabaseInstanceEngine.SQL_SERVER_EX,        
+        engine: rds.DatabaseInstanceEngine.sqlServerEx({ version: rds.SqlServerEngineVersion.VER_15}),        
         vpc: props.vpc,
-        vpcSubnets: { subnets: props.vpc.privateSubnets }, 
-        // multiAz: false, 
-        // availabilityZone:  props.vpc.availabilityZones[0],      
-        storageType: rds.StorageType.GP2,
+        vpcSubnets: { subnets: props.vpc.privateSubnets },   
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.XLARGE),            
+        storageType: rds.StorageType.GP2, 
         removalPolicy: cdk.RemovalPolicy.DESTROY,
-        databaseName: `${clientPrefix}-db`,
-        credentials: rds.Credentials.fromGeneratedSecret(`${clientPrefix}-db-credentials`),
-        port: 1433,
+        // databaseName: `${clientPrefix}-db`,
+        credentials: rds.Credentials.fromGeneratedSecret(`sa`,{
+            secretName: "mssql_secret"
+        })
       });
 
       db.stack.tags.setTag("client", clientName)
