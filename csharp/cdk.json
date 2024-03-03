@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/myla-cdk.ts",
+  "app": "dotnet run --project src/MylaCdk/MylaCdk.csproj",
   "watch": {
     "include": [
       "**"
@@ -7,13 +7,11 @@
     "exclude": [
       "README.md",
       "cdk*.json",
-      "**/*.d.ts",
-      "**/*.js",
-      "tsconfig.json",
-      "package*.json",
-      "yarn.lock",
-      "node_modules",
-      "test"
+      "src/*/obj",
+      "src/*/bin",
+      "src/*.sln",
+      "src/*/GlobalSuppressions.cs",
+      "src/*/*.csproj"
     ]
   },
   "context": {
