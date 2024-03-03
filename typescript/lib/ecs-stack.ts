@@ -9,7 +9,7 @@ interface EcsStackProps extends cdk.StackProps {
 
 export class EscStack extends cdk.Stack {
 
-  public readonly MyVpc: ec2.IVpc;
+  public readonly vpc: ec2.IVpc;
   public readonly clientName: string;
   public readonly envName: string;
 
@@ -41,7 +41,7 @@ export class EscStack extends cdk.Stack {
     vpc.stack.tags.setTag("client", props.clientName)
     vpc.stack.tags.setTag("environment", props.envName);
 
-    this.MyVpc = vpc;
+    this.vpc = vpc;
     this.clientName = clientName;
     this.envName = props.envName;    
   }

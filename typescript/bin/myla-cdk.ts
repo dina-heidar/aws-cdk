@@ -15,6 +15,6 @@ const ecs_Stack = new EscStack(app, 'EcsStack', {
  new StateFulStack(app, 'StateFulStack', { 
   clientName: ecs_Stack.clientName,
   envName: ecs_Stack.envName,
-  vpc: ecs_Stack.MyVpc  ,
+  vpc: ecs_Stack.vpc  ,
   env
 });
