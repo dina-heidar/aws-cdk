@@ -20,6 +20,8 @@ export class EscStack extends cdk.Stack {
     const clientPrefix = `${clientName}-${props.envName}`;
    
     //vpc resurces
+    //TODO: do a lookup and see if that vpc exists
+    //if not, create the dev or prod vpc
     const vpc = new ec2.Vpc(this, `${clientPrefix}-vpc`, {
       maxAzs: 2,      
       vpcName: `${clientPrefix}-vpc`,      
