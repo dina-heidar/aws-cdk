@@ -12,6 +12,7 @@ interface EcsStackProps extends cdk.StackProps {
   clientName: string;
   envName: string;
   domain: string;
+  region: string;
 }
 
 export class EscStack extends cdk.Stack {
@@ -26,7 +27,7 @@ export class EscStack extends cdk.Stack {
        
     const clientName = props.clientName;
     const clientPrefix = `${clientName}-${props.envName}`;
-    const hosted = `${clientPrefix}.${props.envName}.${props.domain}`;
+    const hosted = `${props.envName}.${clientName}.${props.domain}`;
    
     //vpc resurces
     //TODO: do a lookup and see if that vpc exists
@@ -77,17 +78,19 @@ export class EscStack extends cdk.Stack {
       ),
       ttl: cdk.Duration.seconds(300),
       comment: `${props.envName} sample web domain`,
+      region: `${props.region}`,
       zone: zone,
     });
 
     //aws cert manager doesn't validation against dns so trying this
-    // new route53.CnameRecord(this, `${clientPrefix}-www-domain`, {
-    //   zone: zone,
-    //   recordName: `www.${hosted}`,
-    //   domainName: `${hosted}`,
-    //   ttl: cdk.Duration.seconds(300),
-    //   comment: `${props.envName} sample web domain`,
-    // });
+    new route53.CnameRecord(this, `${clientPrefix}-www-domain`, {
+      zone: zone,
+      region: `${props.region}`,
+      recordName: `www.${hosted}`,
+      domainName: `${hosted}`,
+      ttl: cdk.Duration.seconds(300),
+      comment: `${props.envName} sample web domain`,
+    });
 
     const targetGroupHttp = new elb2.ApplicationTargetGroup(
       this,
@@ -112,8 +115,9 @@ export class EscStack extends cdk.Stack {
         domainName: `${hosted}`,
         subjectAlternativeNames: [`*.${hosted}`],
         validation: cm.CertificateValidation.fromDns(zone),
-      }
-    );
+      });
+
+
     const listener = elb.addListener("Listener", {
       open: true,
       port: 443,

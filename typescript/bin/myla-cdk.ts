@@ -11,6 +11,7 @@ const ecs_Stack = new EscStack(app, 'EcsStack', {
     clientName: 'dina', //'ots-CCoE',
     envName: "dev",
     domain: "la.gov",
+    region: "us-east-1",
     env
 });
  new StateFulStack(app, 'StateFulStack', { 
