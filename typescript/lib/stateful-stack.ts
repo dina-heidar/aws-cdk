@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as rds from "aws-cdk-lib/aws-rds";
 
 interface StateFulStackProps extends cdk.StackProps {
@@ -14,7 +15,13 @@ export class StateFulStack extends cdk.Stack {
       super(scope, id, props);
   
       const clientName = props.clientName;
-      const clientPrefix = `${clientName}-${props.envName}`;
+      const clientPrefix = `${clientName}-${props.envName}`;    
+      
+      //TODO
+      //export db *.bak to s3 bucket?
+      //some process to update to versioned image and deploy when 
+      //new version of application is available
+      
 
       //rds
       //look at docs to get version with instance type
@@ -22,7 +29,8 @@ export class StateFulStack extends cdk.Stack {
       const db = new rds.DatabaseInstance(this, `${clientPrefix}-rds`, {
         engine: rds.DatabaseInstanceEngine.sqlServerEx({ version: rds.SqlServerEngineVersion.VER_15}),  
         vpc: props.vpc,
-        vpcSubnets: { subnets: props.vpc.privateSubnets },   
+        multiAz: false, //it ignores this and still requires it created in  a multi-az
+        vpcSubnets: { subnets: props.vpc.privateSubnets },           
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.XLARGE),            
         storageType: rds.StorageType.GP2, 
         removalPolicy: cdk.RemovalPolicy.DESTROY, //retain in production

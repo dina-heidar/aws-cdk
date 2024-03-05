@@ -8,8 +8,9 @@ const app = new cdk.App();
 const env = {account: '654654599146',  region: 'us-east-1' }
 
 const ecs_Stack = new EscStack(app, 'EcsStack', {     
-    clientName: 'ots-CCoE',
+    clientName: 'dina', //'ots-CCoE',
     envName: "dev",
+    domain: "la.gov",
     env
 });
  new StateFulStack(app, 'StateFulStack', { 
