@@ -35,7 +35,9 @@ export class EscStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, `${clientPrefix}-vpc`, {
       maxAzs: 2,      
       vpcName: `${clientPrefix}-vpc`,      
-      ipAddresses: ec2.IpAddresses.cidr("10.13.0.0/16"),      
+      ipAddresses: ec2.IpAddresses.cidr("10.13.0.0/16"),    
+      enableDnsHostnames: true,  
+      enableDnsSupport: true,
       subnetConfiguration: [
         {
           name: `${clientPrefix}-private-subnet`,
@@ -50,27 +52,27 @@ export class EscStack extends cdk.Stack {
       ],      
     });    
 
-    vpc.stack.tags.setTag("client", props.clientName)
+    vpc.stack.tags.setTag("client", props.clientName);
     vpc.stack.tags.setTag("environment", props.envName);    
 
-
-     // load balancer resources
-     const elb = new elb2.ApplicationLoadBalancer(
-      this,
-      `${clientPrefix}-elb`,
-      {
-        vpc,
-        vpcSubnets: { subnets: vpc.publicSubnets },
-        internetFacing: true,
-      }
-    );
-
+      // load balancer resources
+      const elb = new elb2.ApplicationLoadBalancer(
+        this,
+        `${clientPrefix}-elb`,
+        {
+          vpc,
+          vpcSubnets: { subnets: vpc.publicSubnets },
+          internetFacing: true,
+        }
+      );
+    
     const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
-      vpc: vpc,
-      zoneName: hosted,
-      comment: `${props.envName} sample web domain`,
+      vpc: vpc,      
+      zoneName: hosted,      
+      comment: `${props.envName} sample web domain`
     });
 
+    
     new route53.ARecord(this, `${clientPrefix}-domain`, {
       recordName: `${hosted}`,
       target: route53.RecordTarget.fromAlias(
@@ -82,7 +84,7 @@ export class EscStack extends cdk.Stack {
       zone: zone,
     });
 
-    //aws cert manager doesn't validation against dns so trying this
+    // aws cert manager doesn't validation against dns so trying this
     // new route53.CnameRecord(this, `${clientPrefix}-www-domain`, {
     //   zone: zone,
     //   region: `${props.region}`,
@@ -91,6 +93,8 @@ export class EscStack extends cdk.Stack {
     //   ttl: cdk.Duration.seconds(300),
     //   comment: `${props.envName} sample web domain`,
     // });
+
+   
 
     const targetGroupHttp = new elb2.ApplicationTargetGroup(
       this,
@@ -108,20 +112,21 @@ export class EscStack extends cdk.Stack {
       protocol: elb2.Protocol.HTTP,
     });
 
-    const cert = new cm.Certificate(
-      this,
-      `${clientPrefix}-cert`,
-      {
-        domainName: `${hosted}`,
-        subjectAlternativeNames: [`*.${hosted}`],
-        validation: cm.CertificateValidation.fromDns(zone),
-      });
+    // const cert = new cm.Certificate(
+    //   this,
+    //   `${clientPrefix}-cert`,
+    //   {
+    //     domainName: `${hosted}`,
+    //     subjectAlternativeNames: [`*.${hosted}`],
+    //     validation: cm.CertificateValidation.fromDns(zone),
+    //   });
 
 
     const listener = elb.addListener("Listener", {
       open: true,
-      port: 443,
-      certificates: [cert],
+      port: 80,     
+      protocol: elb2.ApplicationProtocol.HTTP,     
+      // certificates: [cert],
     });
 
     listener.addTargetGroups(`${clientPrefix}-tg`, {
@@ -130,13 +135,13 @@ export class EscStack extends cdk.Stack {
 
     const elbSG = new ec2.SecurityGroup(this, `${clientPrefix}-elbSG`, {
       vpc,
-      allowAllOutbound: true,
+      allowAllOutbound: true,      
     });
 
     elbSG.addIngressRule(
       ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(443),
-      "Allow https traffic"
+      ec2.Port.tcp(80),     
+      "Allow http traffic"
     );
 
     elb.addSecurityGroup(elbSG);
@@ -165,10 +170,14 @@ export class EscStack extends cdk.Stack {
 
     const container = taskDefinition.addContainer(`${clientPrefix}-web-container`, {
       memoryLimitMiB: 512,
-      image: ecs.ContainerImage.fromRegistry("mcr.microsoft.com/dotnet/samples:aspnetapp")
+      environment: {
+        ASPNETCORE_ENVIRONMENT: "Development",
+      },
+      image: ecs.ContainerImage.fromRegistry("mcr.microsoft.com/dotnet/samples:aspnetapp"),
+      logging: ecs.LogDriver.awsLogs({ streamPrefix: "dina-web-logs" }),
     });
 
-    container.addPortMappings({ containerPort: 80 });
+    container.addPortMappings({ containerPort: 8080 });
 
     const ecsSG = new ec2.SecurityGroup(this, `${clientPrefix}-ecs-sg`, {
       vpc,
@@ -186,7 +195,7 @@ export class EscStack extends cdk.Stack {
       desiredCount: 2,
       taskDefinition,
       securityGroups: [ecsSG],
-      assignPublicIp: true,
+      // assignPublicIp: true,
     });
 
     service.attachToApplicationTargetGroup(targetGroupHttp);
