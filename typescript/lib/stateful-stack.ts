@@ -17,12 +17,6 @@ export class StateFulStack extends cdk.Stack {
       const clientName = props.clientName;
       const clientPrefix = `${clientName}-${props.envName}`;    
       
-      //TODO
-      //export db *.bak to s3 bucket?
-      //some process to update to versioned image and deploy when 
-      //new version of application is available
-      
-
       //rds
       //look at docs to get version with instance type
       //https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_SQLServer.html#SQLServer.Concepts.General.VersionSupport
@@ -31,16 +25,13 @@ export class StateFulStack extends cdk.Stack {
         vpc: props.vpc,
         multiAz: false, //it ignores this and still requires it created in  a multi-az
         vpcSubnets: { subnets: props.vpc.privateSubnets },           
-        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.XLARGE),            
-        storageType: rds.StorageType.GP2, 
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.XLARGE), 
+        backupRetention: cdk.Duration.days(7), 
         removalPolicy: cdk.RemovalPolicy.DESTROY, //retain in production
         // databaseName: `${clientPrefix}-db`, //cannot use this for ms sql, must be null
         credentials: rds.Credentials.fromGeneratedSecret(`sa`,{
             secretName: "mssql_secret" //will create a secret in secrets manager
         })
       });
-
-      db.stack.tags.setTag("client", clientName)
-      db.stack.tags.setTag("environment", props.envName);
     }
 }
