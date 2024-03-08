@@ -1,13 +1,13 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import * as secrets from "aws-cdk-lib/aws-secretsmanager";
+// import * as secrets from "aws-cdk-lib/aws-secretsmanager";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as elb2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53targets from "aws-cdk-lib/aws-route53-targets";
-import * as cm from "aws-cdk-lib/aws-certificatemanager";
+// import * as cm from "aws-cdk-lib/aws-certificatemanager";
 
 interface EcsStackProps extends cdk.StackProps {
   clientName: string;
@@ -187,9 +187,9 @@ export class EscStack extends cdk.Stack {
 
     const container = taskDefinition.addContainer(`${clientPrefix}-web-container`, {
       memoryLimitMiB: 512,
-      environment: {
-        ASPNETCORE_ENVIRONMENT: "Development",
-      },
+      // environment: {
+      //   ASPNETCORE_ENVIRONMENT: "Development",
+      // },
       image: ecs.ContainerImage.fromRegistry("mcr.microsoft.com/dotnet/samples:aspnetapp"),
       logging: ecs.LogDriver.awsLogs({ streamPrefix: "dina-web-logs" }),
     });
