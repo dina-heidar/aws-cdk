@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
+import * as secrets from "aws-cdk-lib/aws-secretsmanager";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -55,6 +56,21 @@ export class EscStack extends cdk.Stack {
     vpc.stack.tags.setTag("client", props.clientName);
     vpc.stack.tags.setTag("environment", props.envName);    
 
+
+    //add secret to get container later from private registry
+    // const appdmApiKeyName = new cdk.CfnParameter(this, 'appdmApiKey', {
+    //   type: 'String',
+    //   noEcho: true
+    // });
+    
+    // const apiKeySecret = new secrets.Secret(this, 'AppDm Docker API Key', {
+    //   secretName: 'appdmApiKey',
+    //   secretStringValue:  cdk.SecretValue.unsafePlainText(
+    //     appdmApiKeyName.valueAsString      
+    //   ),
+    // });
+
+
       // load balancer resources
       const elb = new elb2.ApplicationLoadBalancer(
         this,
@@ -62,7 +78,7 @@ export class EscStack extends cdk.Stack {
         {
           vpc,
           vpcSubnets: { subnets: vpc.publicSubnets },
-          internetFacing: true,
+          internetFacing: true,     
         }
       );
     
@@ -104,6 +120,8 @@ export class EscStack extends cdk.Stack {
         vpc,
         protocol: elb2.ApplicationProtocol.HTTP,
         targetType: elb2.TargetType.IP,
+        //stickinessCookieDuration: cdk.Duration.hours(1), // Enable Sticky Sessions
+        //stickinessCookieName: 'MyLAAppCookie', // Set the name of the stickiness cookie   
       }
     );
 
@@ -166,7 +184,6 @@ export class EscStack extends cdk.Stack {
       networkMode: ecs.NetworkMode.AWS_VPC,
       taskRole: taskRole,
     });
-
 
     const container = taskDefinition.addContainer(`${clientPrefix}-web-container`, {
       memoryLimitMiB: 512,
