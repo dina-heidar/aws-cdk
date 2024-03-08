@@ -14,12 +14,12 @@ const ecs_Stack = new EscStack(app, 'EcsStack', {
     region: "us-east-1",
     env
 });
-cdk.Tags.of(app).add('client', ecs_Stack.clientName);
-cdk.Tags.of(app).add('environemnts', ecs_Stack.envName);
-
  new StateFulStack(app, 'StateFulStack', { 
   clientName: ecs_Stack.clientName,
   envName: ecs_Stack.envName,
   vpc: ecs_Stack.vpc  ,
   env
 });
+
+cdk.Tags.of(app).add('client', ecs_Stack.clientName);
+cdk.Tags.of(app).add('environemnt', ecs_Stack.envName);
