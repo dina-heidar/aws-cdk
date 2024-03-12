@@ -3,23 +3,40 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { EscStack } from '../lib/ecs-stack';
 import { StateFulStack } from '../lib/stateful-stack';
+import { NetBaseStack } from '../lib/netBase-stack';
+
+enum EnvName{
+  DEV = "dev",
+  PROD = "prod"
+}
 
 const app = new cdk.App();
 const env = {account: '654654599146',  region: 'us-east-1' }
 
-const ecs_Stack = new EscStack(app, 'EcsStack', {     
-    clientName: 'dina', //'ots-CCoE',
-    envName: "dev",
-    domain: "la.gov",
-    region: "us-east-1",
-    env
-});
- new StateFulStack(app, 'StateFulStack', { 
-  clientName: ecs_Stack.clientName,
-  envName: ecs_Stack.envName,
-  vpc: ecs_Stack.vpc  ,
+const netBaseStack = new NetBaseStack(app, 'NetBaseStack', {
+  clientName: 'dina', //'ots-CCoE',
+  envName: EnvName.DEV,
+  domain: "la.gov",
+  region: "us-east-1",
+  cidr: "10.13.0.0/16",
   env
 });
 
-cdk.Tags.of(app).add('client', ecs_Stack.clientName);
-cdk.Tags.of(app).add('environemnt', ecs_Stack.envName);
+const statefulStack= new StateFulStack(app, 'StateFulStack', { 
+  clientName: netBaseStack.clientName,
+  envName: netBaseStack.envName,
+  vpc: netBaseStack.vpc,
+  cluster: netBaseStack.cluster,
+  env
+});
+
+new EscStack(app, 'EcsStack', {     
+    clientName: netBaseStack.clientName,
+    envName: netBaseStack.envName,    
+    cluster: netBaseStack.cluster,
+    rds: statefulStack.rds,
+    env
+});
+
+cdk.Tags.of(app).add('client', netBaseStack.clientName);
+cdk.Tags.of(app).add('environemnt', netBaseStack.envName);
