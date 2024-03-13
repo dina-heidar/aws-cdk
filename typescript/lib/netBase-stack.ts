@@ -54,7 +54,7 @@ export class NetBaseStack extends cdk.Stack {
       clusterName: `${clientPrefix}-ecs-cluster`,    
     });     
 
-        // const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
+    // const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
     //   vpc: vpc,      
     //   zoneName: hosted,      
     //   comment: `${props.envName} sample web domain`
@@ -82,18 +82,18 @@ export class NetBaseStack extends cdk.Stack {
 
     //add secret to get container later from private registry
     //cdk deploy --parameters appdmApiKey=12345 --profile sandbox EcsStacks
-    const appdmApiKeyName = new cdk.CfnParameter(this, "appdmApiKey", {
-      type: "String",
-      description: "AppDm Docker Hub Key",
-      noEcho: true, //do not show in cf template
-    });
+    // const appdmApiKeyName = new cdk.CfnParameter(this, "appdmApiKey", {
+    //   type: "String",
+    //   description: "AppDm Docker Hub Key",
+    //   noEcho: true, //do not show in cf template
+    // });
 
-    const apiKeySecret = new secrets.Secret(this, "AppDm-Docker-API-Key", {
-      secretName: "APPDM_DOCKER_API_Key",
-      secretStringValue: cdk.SecretValue.unsafePlainText(
-        appdmApiKeyName.valueAsString
-      ),
-    });
+    // const apiKeySecret = new secrets.Secret(this, "AppDm-Docker-API-Key", {
+    //   secretName: "APPDM_DOCKER_API_Key",
+    //   secretStringValue: cdk.SecretValue.unsafePlainText(
+    //     appdmApiKeyName.valueAsString
+    //   ),
+    // });
 
     this.vpc = vpc;
     this.clientName = clientName;

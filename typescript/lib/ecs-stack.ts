@@ -21,19 +21,6 @@ export class EscStack extends cdk.Stack {
     const clientName = props.clientName;
     const clientPrefix = `${clientName}-${props.envName}`;   
 
-    const appdmApiKeyName = new cdk.CfnParameter(this, "appdmApiKey", {
-      type: "String",
-      description: "AppDm Docker Hub Key",
-      noEcho: true, //do not show in cf template
-    });
-
-    const apiKeySecret = new sm.Secret(this, "AppDm-Docker-API-Key", {
-      secretName: "APPDM_DOCKER_API_Key",
-      secretStringValue: cdk.SecretValue.unsafePlainText(
-        appdmApiKeyName.valueAsString
-      ),
-    });
-
     const samlPem = sm.Secret.fromSecretCompleteArn(this, "samlpem","arn:aws:secretsmanager:us-east-1:654654599146:secret:SAMLProviderPem-O3bP5m");
     const samlRsaKey = sm.Secret.fromSecretCompleteArn(this, "samlkey","arn:aws:secretsmanager:us-east-1:654654599146:secret:SamlRsaKey-D3R6c5");
     const providerlPem = sm.Secret.fromSecretCompleteArn(this, "providerpem","arn:aws:secretsmanager:us-east-1:654654599146:secret:EaPem-Y32PsR");
@@ -48,6 +35,7 @@ export class EscStack extends cdk.Stack {
   });
 
   const dbSecret = sm.Secret.fromSecretCompleteArn(this, "db-secret",props.rds.secret!.secretArn );
+  const dockerSecret = sm.Secret.fromSecretCompleteArn(this, "docker-hub-secret",props.rds.secret!.secretArn );
   
     const elbFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${clientPrefix}-ecs-service`, {
       cluster:props.cluster, 
@@ -61,11 +49,11 @@ export class EscStack extends cdk.Stack {
       desiredCount: 2,       
       //protocolVersion: elb2.ApplicationProtocolVersion.HTTP2,   
       taskImageOptions: {
-        image: ecs.ContainerImage.fromRegistry("appdm/myla-dev", {
-          credentials: apiKeySecret, //check the cf if for output         
+        image: ecs.ContainerImage.fromRegistry("appdm/myla-dev:v1.1", {
+          credentials: dockerSecret, //check the cf if for output         
         }),   
         containerName: `${clientPrefix}-web-container`,
-        containerPort: 443,                      
+        containerPort: 80,                      
         // command: ['command'],
         // entryPoint: ['entry', 'point'],
         family: `${clientPrefix}-task`,  
@@ -80,7 +68,7 @@ export class EscStack extends cdk.Stack {
           AppConfiguration__SAMLProvider__Certificate__RSAKey: samlRsaKey.secretValue.resolve.toString(),
           AppConfiguration__ServiceProvider__Certificate__Pem: providerlPem.secretValue.resolve.toString(),
           AppConfiguration__ServiceProvider__Certificate__RSAKey: providerRsaKey.secretValue.resolve.toString(),
-          ASPNETCORE_URLS:"https://+:443;http://+:80" ,
+          ASPNETCORE_URLS:"http://+:80;https://+:443" ,
           ASPNETCORE_HTTPS_PORT:"443",
           ASPNETCORE_HTTP_PORT:"80",
           ASPNETCORE_Kestrel__Certificates__Default__Password:"1234",
@@ -93,7 +81,7 @@ export class EscStack extends cdk.Stack {
     });
 
     elbFargateService.targetGroup.configureHealthCheck({     
-      path: "/hc",      
+      path: "/hc/ready",      
       protocol: elb2.Protocol.HTTPS,
     });
        
@@ -114,9 +102,9 @@ export class EscStack extends cdk.Stack {
       value: elbFargateService.service.serviceName,
     });
     
-    new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
-      exportName: `${props.envName}-clusterName`,
-      value: props.cluster.clusterName,
-    });
+    // new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
+    //   exportName: `${props.envName}-clusterName`,
+    //   value: props.cluster.clusterName,
+    // });
   }
 }

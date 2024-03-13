@@ -24,7 +24,7 @@ export class StateFulStack extends cdk.Stack {
       // create a security group for aurora db
       const dbSecurityGroup = new ec2.SecurityGroup(this, `${clientPrefix}-db-sg`, {
         vpc: props.vpc, // use the vpc created above
-        allowAllOutbound: true, // allow outbound traffic to anywhere
+        allowAllOutbound: true, // allow outbound traffic to anywhere        
     })
 
     const dbPort = 1433; // default port for ms sql
@@ -42,7 +42,7 @@ export class StateFulStack extends cdk.Stack {
         engine: rds.DatabaseInstanceEngine.sqlServerEx({ version: rds.SqlServerEngineVersion.VER_15}),  
         vpc: props.vpc,
         multiAz: false, //it ignores this and still requires it created in  a multi-az
-        vpcSubnets: { subnets: props.vpc.privateSubnets },           
+        vpcSubnets: { subnets: props.vpc.publicSubnets },   //need to access this from ssms        
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.XLARGE),        
         backupRetention: cdk.Duration.days(7), 
         publiclyAccessible: true,
@@ -51,7 +51,8 @@ export class StateFulStack extends cdk.Stack {
       });
 
       databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");
-      
+      databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow from 1433");  
+
       this.rds = databaseCluster;
     
       // outputs to be used in code deployments
