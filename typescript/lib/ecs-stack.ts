@@ -59,15 +59,15 @@ export class EscStack extends cdk.Stack {
         family: `${clientPrefix}-task`,  
         taskRole: taskRole,   //might not need this  
         secrets: {
-          "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'passowrd'),
+          "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
           "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
         },       
         environment: {
           ASPNETCORE_ENVIRONMENT: "Docker",
-          AppConfiguration__SAMLProvider__Certificate__Pem: samlPem.secretValue.resolve.toString(),
-          AppConfiguration__SAMLProvider__Certificate__RSAKey: samlRsaKey.secretValue.resolve.toString(),
-          AppConfiguration__ServiceProvider__Certificate__Pem: providerlPem.secretValue.resolve.toString(),
-          AppConfiguration__ServiceProvider__Certificate__RSAKey: providerRsaKey.secretValue.resolve.toString(),
+          AppConfiguration__SAMLProvider__Certificate__Pem:  samlPem.secretValue.unsafeUnwrap(), //find a way not to do this
+          AppConfiguration__SAMLProvider__Certificate__RSAKey: samlRsaKey.secretValue.unsafeUnwrap(), 
+          AppConfiguration__ServiceProvider__Certificate__Pem: providerlPem.secretValue.unsafeUnwrap(), 
+          AppConfiguration__ServiceProvider__Certificate__RSAKey: providerRsaKey.secretValue.unsafeUnwrap(), 
           ASPNETCORE_URLS:"http://+:8080;https://+:443" ,
           ASPNETCORE_HTTPS_PORT:"443",
           ASPNETCORE_HTTP_PORT:"8080",
@@ -100,11 +100,6 @@ export class EscStack extends cdk.Stack {
      new cdk.CfnOutput(this, `${props.envName}-serviceName`, {
       exportName: `${props.envName}-serviceName`,
       value: elbFargateService.service.serviceName,
-    });
-    
-    // new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
-    //   exportName: `${props.envName}-clusterName`,
-    //   value: props.cluster.clusterName,
-    // });
+    });    
   }
 }
