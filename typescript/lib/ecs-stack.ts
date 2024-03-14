@@ -44,17 +44,17 @@ export class EscStack extends cdk.Stack {
       cluster:props.cluster, 
       cpu: 512, 
       memoryLimitMiB: 1024,
-      serviceName: `${clientPrefix}-ecs-service`,            
-      // certificate: cert, //when domain is a public domain  
+      serviceName: `${clientPrefix}-ecs-service`,  
+      // listenerPort: 443,  
+      // protocol: elb2.ApplicationProtocol.HTTPS, //certifcate must be issued, it says it'll issue one?
       loadBalancerName: `${clientPrefix}-elb`,  
-      //sslPolicy: elb2.SslPolicy.TLS12,
+      // sslPolicy: elb2.SslPolicy.TLS12,
       assignPublicIp: true,        
-      desiredCount: 2,       
-      //protocolVersion: elb2.ApplicationProtocolVersion.HTTP2,   
+      desiredCount: 2,             
       taskImageOptions: {
         image: image, //use the image from the ecr 
-        containerName: `${clientPrefix}-web-container`,
-        containerPort: 8080,                      
+        containerName: `${clientPrefix}-web-container`,    
+        containerPort: 8443,                              
         // command: ['command'],
         // entryPoint: ['entry', 'point'],
         family: `${clientPrefix}-task`,  
