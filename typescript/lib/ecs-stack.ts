@@ -6,6 +6,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as elb2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as ecsPatterns from "aws-cdk-lib/aws-ecs-patterns"; 
 import * as rds from "aws-cdk-lib/aws-rds";
+import * as ecr from "aws-cdk-lib/aws-ecr";
 
 interface EcsStackProps extends cdk.StackProps {
   clientName: string;
@@ -35,8 +36,10 @@ export class EscStack extends cdk.Stack {
   });
 
   const dbSecret = sm.Secret.fromSecretCompleteArn(this, "db-secret",props.rds.secret!.secretArn );
-  const dockerSecret = sm.Secret.fromSecretCompleteArn(this, "docker-hub-secret",props.rds.secret!.secretArn );
-  
+
+  const repository = ecr.Repository.fromRepositoryName(this, 'myla-dev', 'myla-dev');
+  const image = ecs.ContainerImage.fromEcrRepository(repository, '1.1');
+
     const elbFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${clientPrefix}-ecs-service`, {
       cluster:props.cluster, 
       cpu: 512, 
@@ -49,9 +52,7 @@ export class EscStack extends cdk.Stack {
       desiredCount: 2,       
       //protocolVersion: elb2.ApplicationProtocolVersion.HTTP2,   
       taskImageOptions: {
-        image: ecs.ContainerImage.fromRegistry("appdm/myla-dev:v1.1", {
-          credentials: dockerSecret, //check the cf if for output         
-        }),   
+        image: image, //use the image from the ecr
         containerName: `${clientPrefix}-web-container`,
         containerPort: 8080,                      
         // command: ['command'],
@@ -61,13 +62,13 @@ export class EscStack extends cdk.Stack {
         secrets: {
           "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
           "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
+          "AppConfiguration__SAMLProvider__Certificate__Pem":  ecs.Secret.fromSecretsManager(samlPem), 
+          "AppConfiguration__SAMLProvider__Certificate__RSAKey": ecs.Secret.fromSecretsManager(samlRsaKey), 
+          "AppConfiguration__ServiceProvider__Certificate__Pem": ecs.Secret.fromSecretsManager(providerlPem), 
+          "AppConfiguration__ServiceProvider__Certificate__RSAKey": ecs.Secret.fromSecretsManager(providerRsaKey), 
         },       
         environment: {
-          ASPNETCORE_ENVIRONMENT: "Docker",
-          AppConfiguration__SAMLProvider__Certificate__Pem:  samlPem.secretValue.unsafeUnwrap(), //find a way not to do this
-          AppConfiguration__SAMLProvider__Certificate__RSAKey: samlRsaKey.secretValue.unsafeUnwrap(), 
-          AppConfiguration__ServiceProvider__Certificate__Pem: providerlPem.secretValue.unsafeUnwrap(), 
-          AppConfiguration__ServiceProvider__Certificate__RSAKey: providerRsaKey.secretValue.unsafeUnwrap(), 
+          ASPNETCORE_ENVIRONMENT: "Docker",          
           ASPNETCORE_URLS:"http://+:8080;https://+:443" ,
           ASPNETCORE_HTTPS_PORT:"443",
           ASPNETCORE_HTTP_PORT:"8080",
