@@ -38,7 +38,7 @@ export class EscStack extends cdk.Stack {
   const dbSecret = sm.Secret.fromSecretCompleteArn(this, "db-secret",props.rds.secret!.secretArn );
 
   const repository = ecr.Repository.fromRepositoryName(this, 'myla-dev', 'myla-dev');
-  const image = ecs.ContainerImage.fromEcrRepository(repository, '1.1');
+  const image = ecs.ContainerImage.fromEcrRepository(repository, '1.2');
 
     const elbFargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${clientPrefix}-ecs-service`, {
       cluster:props.cluster, 
@@ -52,7 +52,7 @@ export class EscStack extends cdk.Stack {
       desiredCount: 2,       
       //protocolVersion: elb2.ApplicationProtocolVersion.HTTP2,   
       taskImageOptions: {
-        image: image, //use the image from the ecr
+        image: image, //use the image from the ecr 
         containerName: `${clientPrefix}-web-container`,
         containerPort: 8080,                      
         // command: ['command'],
@@ -69,9 +69,8 @@ export class EscStack extends cdk.Stack {
         },       
         environment: {
           ASPNETCORE_ENVIRONMENT: "Docker",          
-          ASPNETCORE_URLS:"http://+:8080;https://+:443" ,
-          ASPNETCORE_HTTPS_PORT:"443",
-          ASPNETCORE_HTTP_PORT:"8080",
+          ASPNETCORE_URLS:"https://+;http://+" ,
+          ASPNETCORE_HTTPS_PORT:"8443",
           ASPNETCORE_Kestrel__Certificates__Default__Password:"1234",
           ASPNETCORE_Kestrel__Certificates__Default__Path: "/usr/local/share/ca-certificates/localhost.pfx",
           "DB_HOST": props.rds.instanceEndpoint.hostname,
