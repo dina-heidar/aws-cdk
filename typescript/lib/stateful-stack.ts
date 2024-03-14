@@ -3,6 +3,10 @@ import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as ecs from "aws-cdk-lib/aws-ecs"; 
+import { CdkResourceInitializer } from '../lib/resource-initializer'
+import { CfnOutput, Duration, Stack, Token } from 'aws-cdk-lib/core'
+import { DockerImageCode } from 'aws-cdk-lib/aws-lambda'
+import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 
 interface StateFulStackProps extends cdk.StackProps {
     clientName: string;
@@ -50,8 +54,44 @@ export class StateFulStack extends cdk.Stack {
         // databaseName: `${clientPrefix}-db`, //cannot use this for ms sql, must be null
       });
 
-      databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");
+      databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");      
       databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow from 1433");  
+
+      const instanceIdentifier = databaseCluster.instanceIdentifier.toLocaleLowerCase();
+      const credsSecretName = `/${id}/rds/creds/${instanceIdentifier}`.toLowerCase()
+      const creds = new rds.DatabaseSecret(this, 'MysqlRdsCredentials', {
+          secretName: credsSecretName,
+          username: 'admin'
+      })
+     
+      // potentially allow connections to the RDS instance...
+       
+      // const initializer = new CdkResourceInitializer(this, 'rds-init', {
+      //   config: {
+      //     credsSecretName
+      //   },
+      //   fnLogRetention: RetentionDays.FIVE_MONTHS,
+      //   fnCode: DockerImageCode.fromImageAsset(`${__dirname}/rds-init-fn-code`, {}),
+      //   fnTimeout: Duration.minutes(2),
+      //   fnSecurityGroups: [],
+      //   vpc: props.vpc,
+      //   subnetsSelection: props.vpc.selectSubnets({
+      //     subnetType: ec2.SubnetType.PUBLIC //where rds resides for now
+      //   })
+      // })
+      // // manage resources dependency
+      // initializer.customResource.node.addDependency(databaseCluster)
+  
+      // // allow the initializer function to connect to the RDS instance
+      // databaseCluster.connections.allowFrom(initializer.function, ec2.Port.tcp(dbPort) ,"Allow from lambda")
+       
+      // // allow initializer function to read RDS instance creds secret
+      // creds.grantRead(initializer.function)
+  
+      // /* eslint no-new: 0 */
+      // new CfnOutput(this, 'RdsInitFnResponse', {
+      //   value: Token.asString(initializer.response)
+      // })
 
       this.rds = databaseCluster;
     

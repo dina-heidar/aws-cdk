@@ -50,11 +50,13 @@ export class EscStack extends cdk.Stack {
       loadBalancerName: `${clientPrefix}-elb`,  
       // sslPolicy: elb2.SslPolicy.TLS12,
       assignPublicIp: true,        
-      desiredCount: 2,             
+      desiredCount: 2,  
+      circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
+      //redirectHTTP: true,           
       taskImageOptions: {
         image: image, //use the image from the ecr 
         containerName: `${clientPrefix}-web-container`,    
-        containerPort: 8443,                              
+        containerPort: 8443,                                    
         // command: ['command'],
         // entryPoint: ['entry', 'point'],
         family: `${clientPrefix}-task`,  
