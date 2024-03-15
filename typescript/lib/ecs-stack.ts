@@ -61,7 +61,8 @@ export class EcsStack extends cdk.Stack {
     //privileged: true,
     image: image, //use the image from the ecr 
     containerName: `${clientPrefix}-web-container`,   
-    portMappings: [{ containerPort: 443 }], 
+    portMappings: [{ containerPort: 8443 }], 
+    logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-web-container` }),
     secrets: {
       "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
       "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
@@ -72,8 +73,8 @@ export class EcsStack extends cdk.Stack {
     },    
     environment: {
       ASPNETCORE_ENVIRONMENT: "Docker",          
-      ASPNETCORE_URLS:"https://+;http://+" ,
-      ASPNETCORE_HTTPS_PORT:"8443",
+      ASPNETCORE_URLS:"https://*:8443;http://*:8080" ,
+      //ASPNETCORE_HTTPS_PORT:"8443",
       ASPNETCORE_Kestrel__Certificates__Default__Password:"1234", //TODO put this in password section
       ASPNETCORE_Kestrel__Certificates__Default__Path: "/usr/local/share/ca-certificates/localhost.pfx",
       "DB_HOST": props.rds.instanceEndpoint.hostname,
@@ -90,6 +91,7 @@ export class EcsStack extends cdk.Stack {
       certificate: cert,
       listenerPort: 443, 
       domainZone: props.zone, 
+      targetProtocol: elb2.ApplicationProtocol.HTTPS,
       //protocol: elb2.ApplicationProtocol.HTTPS, //certifcate must be issued, it says it'll issue one?
       loadBalancerName: `${clientPrefix}-elb`,  
       // sslPolicy: elb2.SslPolicy.TLS12,
@@ -132,7 +134,7 @@ export class EcsStack extends cdk.Stack {
       protocol: elb2.Protocol.HTTPS,
     });
     
-
+   
     // elbFargateService.targetGroup.enableCookieStickiness(cdk.Duration.hours(1), "MyLAAppCookie");
     const scalableTarget = elbFargateService.service.autoScaleTaskCount({ maxCapacity: 6, minCapacity: 2 });
 
