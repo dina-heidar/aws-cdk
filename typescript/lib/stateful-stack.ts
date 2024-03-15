@@ -57,12 +57,12 @@ export class StateFulStack extends cdk.Stack {
       databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");      
       databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow from 1433");  
 
-      const instanceIdentifier = databaseCluster.instanceIdentifier.toLocaleLowerCase();
-      const credsSecretName = `/${id}/rds/creds/${instanceIdentifier}`.toLowerCase()
-      const creds = new rds.DatabaseSecret(this, 'MysqlRdsCredentials', {
-          secretName: credsSecretName,
-          username: 'admin'
-      })
+      // const instanceIdentifier = databaseCluster.instanceIdentifier.toLocaleLowerCase();
+      // const credsSecretName = `/${id}/rds/creds/${instanceIdentifier}`.toLowerCase();      
+      // const creds = new rds.DatabaseSecret(this, 'MysqlRdsCredentials', {
+      //     secretName: credsSecretName,
+      //     username: 'admin'
+      // })
      
       // potentially allow connections to the RDS instance...
        

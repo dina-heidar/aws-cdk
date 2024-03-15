@@ -3,11 +3,14 @@ import { Construct } from "constructs";
 import * as secrets from "aws-cdk-lib/aws-secretsmanager";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
+import * as route53 from "aws-cdk-lib/aws-route53";
+import * as route53targets from "aws-cdk-lib/aws-route53-targets";
+import * as cm from "aws-cdk-lib/aws-certificatemanager";
 
 interface NetBaseStackProps extends cdk.StackProps {
   clientName: string;
   envName: string;
-  domain: string;
+  hosted: string;
   region: string;
   cidr: string;
 }
@@ -18,13 +21,15 @@ export class NetBaseStack extends cdk.Stack {
   public readonly clientName: string;
   public readonly envName: string;
   public readonly cluster : ecs.ICluster; 
+  public readonly hosted: string;
+  public readonly zone: route53.IHostedZone;
 
   constructor(scope: Construct, id: string, props: NetBaseStackProps) {
     super(scope, id, props);
        
     const clientName = props.clientName;
     const clientPrefix = `${clientName}-${props.envName}`;
-    const hosted = `${props.envName}.${clientName}.${props.domain}`;
+    //const hosted = `${props.envName}.${clientName}.${props.domain}`;
 
     //vpc resources
     //TODO: do a lookup and see if that vpc exists
@@ -54,31 +59,12 @@ export class NetBaseStack extends cdk.Stack {
       clusterName: `${clientPrefix}-ecs-cluster`,    
     });     
 
-    // const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
-    //   vpc: vpc,      
-    //   zoneName: hosted,      
-    //   comment: `${props.envName} sample web domain`
-    // });
-    
-    // new route53.ARecord(this, `${clientPrefix}-domain`, {
-    //   recordName: `${hosted}`,
-    //   target: route53.RecordTarget.fromAlias(
-    //     new route53targets.LoadBalancerTarget(elb)
-    //   ),
-    //   ttl: cdk.Duration.seconds(300),
-    //   comment: `${props.envName} sample web domain`,
-    //   region: `${props.region}`,
-    //   zone: zone,
-    // });
-
-    // const cert = new cm.Certificate(
-    //   this,
-    //   `${clientPrefix}-cert`,
-    //   {
-    //     domainName: `${hosted}`,
-    //     subjectAlternativeNames: [`*.${hosted}`],
-    //     validation: cm.CertificateValidation.fromDns(zone),
-    //   });
+    const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
+      vpc: vpc,      
+      zoneName: props.hosted, 
+      comment: `${props.envName} ECS MyLA`
+    });
+        
 
     //add secret to get container later from private registry
     //cdk deploy --parameters appdmApiKey=12345 --profile sandbox EcsStacks
@@ -98,7 +84,9 @@ export class NetBaseStack extends cdk.Stack {
     this.vpc = vpc;
     this.clientName = clientName;
     this.envName = props.envName; 
-    this.cluster = cluster;       
+    this.cluster = cluster;     
+    this.hosted = props.hosted;  
+    this.zone= zone;
 
     new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
       exportName: `${props.envName}-clusterName`,
