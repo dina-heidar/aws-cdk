@@ -126,7 +126,7 @@ export class EcsAnywhereStack extends cdk.Stack {
       cluster: props.cluster,
       taskDefinition : taskDef,      
       desiredCount: 2,                        
-      circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
+     // circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
     });   
   
     this.service = service;
