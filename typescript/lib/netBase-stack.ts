@@ -21,6 +21,7 @@ export class NetBaseStack extends cdk.Stack {
   public readonly clientName: string;
   public readonly envName: string;
   public readonly cluster : ecs.ICluster; 
+  public readonly clusterAnywhere : ecs.ICluster; 
   public readonly hosted: string;
   public readonly zone: route53.IHostedZone;
 
@@ -50,7 +51,7 @@ export class NetBaseStack extends cdk.Stack {
           name: `${clientPrefix}-public-subnet`,                    
           subnetType: ec2.SubnetType.PUBLIC,
           cidrMask: 24,
-        },
+        },       
       ],      
     });    
 
@@ -59,38 +60,32 @@ export class NetBaseStack extends cdk.Stack {
       clusterName: `${clientPrefix}-ecs-cluster`,    
     });     
 
+    const clusterAnywhere  = new ecs.Cluster(this, `${clientPrefix}-ecs-anywhere-cluster`, {
+      vpc: vpc,
+      clusterName: `${clientPrefix}-ecs-anywhere-cluster`,    
+    });     
+
     const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
       vpc: vpc,      
       zoneName: props.hosted, 
       comment: `${props.envName} ECS MyLA`
-    });
-        
-
-    //add secret to get container later from private registry
-    //cdk deploy --parameters appdmApiKey=12345 --profile sandbox EcsStacks
-    // const appdmApiKeyName = new cdk.CfnParameter(this, "appdmApiKey", {
-    //   type: "String",
-    //   description: "AppDm Docker Hub Key",
-    //   noEcho: true, //do not show in cf template
-    // });
-
-    // const apiKeySecret = new secrets.Secret(this, "AppDm-Docker-API-Key", {
-    //   secretName: "APPDM_DOCKER_API_Key",
-    //   secretStringValue: cdk.SecretValue.unsafePlainText(
-    //     appdmApiKeyName.valueAsString
-    //   ),
-    // });
+    });      
 
     this.vpc = vpc;
     this.clientName = clientName;
     this.envName = props.envName; 
-    this.cluster = cluster;     
+    this.cluster = cluster;   
+    this.clusterAnywhere = clusterAnywhere;  
     this.hosted = props.hosted;  
     this.zone= zone;
 
     new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
       exportName: `${props.envName}-clusterName`,
       value: cluster.clusterName,
+    });
+    new cdk.CfnOutput(this, `${props.envName}-anywhere-clusterName`, {
+      exportName: `${props.envName}-anywhere-clusterName`,
+      value: clusterAnywhere.clusterName,
     });
   }
 }

@@ -10,6 +10,7 @@ import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53targets from "aws-cdk-lib/aws-route53-targets";
 import * as cm from "aws-cdk-lib/aws-certificatemanager";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 interface EcsStackProps extends cdk.StackProps {
   clientName: string;
@@ -43,22 +44,19 @@ export class EcsStack extends cdk.Stack {
   });
 
   const dbSecret = sm.Secret.fromSecretCompleteArn(this, "db-secret",props.rds.secret!.secretArn );
-
   const repository = ecr.Repository.fromRepositoryName(this, 'myla-dev', 'myla-dev');
-  const image = ecs.ContainerImage.fromEcrRepository(repository, '1.2'); 
- 
+  const image = ecs.ContainerImage.fromEcrRepository(repository, '1.2');  
   const cert = cm.Certificate.fromCertificateArn(this, `${props.hosted}-cert`, props.certificateArn);  
 
   const taskDef = new ecs.TaskDefinition(this, `${clientPrefix}-task-def`, {
     compatibility: ecs.Compatibility.FARGATE,
     taskRole: taskRole,
-    family: `${clientPrefix}-task`,
+    family: `${clientPrefix}-task`,    
     memoryMiB: "1024",
     cpu: "512",
   });
   taskDef.addContainer(`${clientPrefix}-web-container`, {   
-    user: "1654",     
-    //privileged: true,
+    user: "1654",  
     image: image, //use the image from the ecr 
     containerName: `${clientPrefix}-web-container`,   
     portMappings: [{ containerPort: 8443 }], 
@@ -74,7 +72,6 @@ export class EcsStack extends cdk.Stack {
     environment: {
       ASPNETCORE_ENVIRONMENT: "Docker",          
       ASPNETCORE_URLS:"https://*:8443;http://*:8080" ,
-      //ASPNETCORE_HTTPS_PORT:"8443",
       ASPNETCORE_Kestrel__Certificates__Default__Password:"1234", //TODO put this in password section
       ASPNETCORE_Kestrel__Certificates__Default__Path: "/usr/local/share/ca-certificates/localhost.pfx",
       "DB_HOST": props.rds.instanceEndpoint.hostname,
@@ -92,48 +89,19 @@ export class EcsStack extends cdk.Stack {
       listenerPort: 443, 
       domainZone: props.zone, 
       targetProtocol: elb2.ApplicationProtocol.HTTPS,
-      //protocol: elb2.ApplicationProtocol.HTTPS, //certifcate must be issued, it says it'll issue one?
-      loadBalancerName: `${clientPrefix}-elb`,  
-      // sslPolicy: elb2.SslPolicy.TLS12,
-      assignPublicIp: true,        
+      loadBalancerName: `${clientPrefix}-elb`, 
+      taskSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, //don't need to be public
+      //assignPublicIp: true,  //service doesn't need to be public       
       desiredCount: 2,  
       circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
       redirectHTTP: true, 
-      taskDefinition: taskDef,          
-      // taskImageOptions: {        
-      //   image: image, //use the image from the ecr 
-      //   containerName: `${clientPrefix}-web-container`,          
-      //   containerPort: 8443,                                          
-      //   // command: ['command'],
-      //   // entryPoint: ['entry', 'point'],
-      //   family: `${clientPrefix}-task`,  
-      //   taskRole: taskRole,   //might not need this  
-      //   secrets: {
-      //     "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
-      //     "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
-      //     "AppConfiguration__SAMLProvider__Certificate__Pem":  ecs.Secret.fromSecretsManager(samlPem), 
-      //     "AppConfiguration__SAMLProvider__Certificate__RSAKey": ecs.Secret.fromSecretsManager(samlRsaKey), 
-      //     "AppConfiguration__ServiceProvider__Certificate__Pem": ecs.Secret.fromSecretsManager(providerlPem), 
-      //     "AppConfiguration__ServiceProvider__Certificate__RSAKey": ecs.Secret.fromSecretsManager(providerRsaKey), 
-      //   },       
-      //   environment: {
-      //     ASPNETCORE_ENVIRONMENT: "Docker",          
-      //     ASPNETCORE_URLS:"https://+;http://+" ,
-      //     ASPNETCORE_HTTPS_PORT:"8443",
-      //     ASPNETCORE_Kestrel__Certificates__Default__Password:"1234", //TODO put this in password section
-      //     ASPNETCORE_Kestrel__Certificates__Default__Path: "/usr/local/share/ca-certificates/localhost.pfx",
-      //     "DB_HOST": props.rds.instanceEndpoint.hostname,
-      //     "DB_PORT": props.rds.instanceEndpoint.port.toString(),
-      //     "DB_NAME": "SessionCache",
-      //   }
-      // },
+      taskDefinition: taskDef,
     });
 
     elbFargateService.targetGroup.configureHealthCheck({     
       path: "/hc/ready",      
       protocol: elb2.Protocol.HTTPS,
-    });
-    
+    });    
    
     // elbFargateService.targetGroup.enableCookieStickiness(cdk.Duration.hours(1), "MyLAAppCookie");
     const scalableTarget = elbFargateService.service.autoScaleTaskCount({ maxCapacity: 6, minCapacity: 2 });

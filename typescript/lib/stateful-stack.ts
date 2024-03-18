@@ -13,6 +13,7 @@ interface StateFulStackProps extends cdk.StackProps {
     envName: string;
     vpc: ec2.IVpc;
     cluster: ecs.ICluster;
+    clusterAnywhere: ecs.ICluster
 }
 
 export class StateFulStack extends cdk.Stack {
@@ -54,7 +55,8 @@ export class StateFulStack extends cdk.Stack {
         // databaseName: `${clientPrefix}-db`, //cannot use this for ms sql, must be null
       });
 
-      databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");      
+      databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");  
+      databaseCluster.connections.allowFrom(props.clusterAnywhere, ec2.Port.tcp(dbPort), "Allow from ecs anywhere cluster");      
       databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow from 1433");  
 
       // const instanceIdentifier = databaseCluster.instanceIdentifier.toLocaleLowerCase();
