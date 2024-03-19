@@ -41,6 +41,12 @@ export class NetBaseStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.cidr("10.13.0.0/16"),    
       enableDnsHostnames: true,  
       enableDnsSupport: true,
+      // flowLogs: { 
+      //   VpcFlowlogs: {
+      //   destination: ec2.FlowLogDestination.toCloudWatchLogs(),
+      //   trafficType: ec2.FlowLogTrafficType.ALL,
+      //   },
+      // },
       subnetConfiguration: [
         {
           name: `${clientPrefix}-private-subnet`,

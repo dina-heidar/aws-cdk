@@ -5,6 +5,7 @@ import { EcsStack } from '../lib/ecs-stack';
 import { EcsAnywhereStack } from '../lib/ecs-anywhere-stack';
 import { StateFulStack } from '../lib/stateful-stack';
 import { NetBaseStack } from '../lib/netBase-stack';
+import { EksStack } from '../lib/eks-stack';
 
 
 enum EnvName{
@@ -49,6 +50,17 @@ new EcsAnywhereStack(app, 'EcsAnywhereStack', {
   clientName: netBaseStack.clientName,
   envName: netBaseStack.envName,    
   cluster: netBaseStack.clusterAnywhere,
+  rds: statefulStack.rds,
+  hosted: netBaseStack.hosted,
+  certificateArn: 'arn:aws:acm:us-east-1:654654599146:certificate/72fcdfb5-addf-4846-8883-07c41e6edf40',
+  region: netBaseStack.region,  
+  env
+});
+
+new EksStack(app, 'EksStack', {     
+  clientName: netBaseStack.clientName,
+  envName: netBaseStack.envName,    
+  vpc: netBaseStack.vpc,
   rds: statefulStack.rds,
   hosted: netBaseStack.hosted,
   certificateArn: 'arn:aws:acm:us-east-1:654654599146:certificate/72fcdfb5-addf-4846-8883-07c41e6edf40',
