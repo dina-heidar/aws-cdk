@@ -44,8 +44,9 @@ export class EcsAnywhereStack extends cdk.Stack {
       roleName: `${clientPrefix}-anywhere-task-role`,
       description: "Role that the web anywhere task definitions use to run the web sample code",
     });
-    taskRole .addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"))
-    taskRole .addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
+
+    taskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"))
+    taskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
     NagSuppressions.addResourceSuppressions(taskRole ,[{id: 'AwsSolutions-IAM4', reason: 'atleast 10 characters'}])
 
     // Grant access to Create Log group and Log Stream
@@ -82,7 +83,7 @@ export class EcsAnywhereStack extends cdk.Stack {
     const image = ecs.ContainerImage.fromEcrRepository(repository, '1.2');     
     
     // Create ExternalTaskDefinition
-    const taskDef = new ecs.ExternalTaskDefinition(this, '${clientPrefix}-task-anywhere-def', {
+    const taskDef = new ecs.ExternalTaskDefinition(this, `${clientPrefix}-task-anywhere-def`, {
         taskRole: taskRole ,
         family: `${clientPrefix}-ext-task`
     });
@@ -118,49 +119,51 @@ export class EcsAnywhereStack extends cdk.Stack {
           "DB_PORT": props.rds.instanceEndpoint.port.toString(),
           "DB_NAME": "SessionCache",
         }        
-      });
+      });    
   
     // Create ExternalService
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-service`, {
       serviceName: `${clientPrefix}-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
-      desiredCount: 2,                        
+      desiredCount: 2,             
      // circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
     });   
   
-    this.service = service;
+    this.service = service;   
 
-    // Create IAM Role
+    // Create IAM Role   
     const instance_iam_role = new iam.Role(this, `${clientPrefix}-ecs-anywhere-role`, {
-      roleName: `${clientPrefix}-ecs-anywhere-role`,
-      assumedBy: new iam.ServicePrincipal('ssm.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"),
-        iam.ManagedPolicy.fromManagedPolicyArn(this, "EcsAnywhereEC2Policy", "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"),
-      ]
-    })
-    instance_iam_role.withoutPolicyUpdates();
-    NagSuppressions.addResourceSuppressions(instance_iam_role,[{id: 'AwsSolutions-IAM4', reason: 'at least 10 characters'}])
+        roleName: `${clientPrefix}-ecs-anywhere-role`,
+        assumedBy: new iam.ServicePrincipal('ssm.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"),
+          iam.ManagedPolicy.fromManagedPolicyArn(this, "EcsAnywhereEC2Policy", "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"),
+        ]
+      })
+      instance_iam_role.withoutPolicyUpdates();
+      NagSuppressions.addResourceSuppressions(instance_iam_role,[{id: 'AwsSolutions-IAM4', reason: 'at least 10 characters'}])
+  
+  
+      new CfnOutput(this, "RegisterExternalInstance", {
+        description: "Create an Systems Manager activation pair",
+        value: `aws ssm create-activation --iam-role ${instance_iam_role.roleName} | tee ssm-activation.json`,
+        exportName: "1-RegisterExternalInstance",
+      })
+  
+      new CfnOutput(this, "DownloadInstallationScript", {
+        description: "On your VM, download installation script",
+        value: 'curl --proto "https" -o "/tmp/ecs-anywhere-install.sh" "https://amazon-ecs-agent.s3.amazonaws.com/ecs-anywhere-install-latest.sh" && sudo chmod +x ecs-anywhere-install.sh',
+        exportName: "2-DownloadInstallationScript",
+      });
+  
+      new CfnOutput(this, "ExecuteScript", {
+        description: "Run installation script on VM",
+        value: "sudo ./ecs-anywhere-install.sh  --region $REGION --cluster $CLUSTER_NAME --activation-id $ACTIVATION_ID --activation-code $ACTIVATION_CODE",
+        exportName: "3-ExecuteInstallationScript",
+      });
 
-
-    new CfnOutput(this, "RegisterExternalInstance", {
-      description: "Create an Systems Manager activation pair",
-      value: `aws ssm create-activation --iam-role ${instance_iam_role.roleName} | tee ssm-activation.json`,
-      exportName: "1-RegisterExternalInstance",
-    })
-
-    new CfnOutput(this, "DownloadInstallationScript", {
-      description: "On your VM, download installation script",
-      value: 'curl --proto "https" -o "/tmp/ecs-anywhere-install.sh" "https://amazon-ecs-agent.s3.amazonaws.com/ecs-anywhere-install-latest.sh" && sudo chmod +x ecs-anywhere-install.sh',
-      exportName: "2-DownloadInstallationScript",
-    });
-
-    new CfnOutput(this, "ExecuteScript", {
-      description: "Run installation script on VM",
-      value: "sudo ./ecs-anywhere-install.sh  --region $REGION --cluster $CLUSTER_NAME --activation-id $ACTIVATION_ID --activation-code $ACTIVATION_CODE",
-      exportName: "3-ExecuteInstallationScript",
-    });
+    
 
   }
 }
