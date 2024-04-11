@@ -121,12 +121,12 @@ export class EcsAnywhereStack extends cdk.Stack {
         }        
       });    
   
-    // Create ExternalService
+    //Create ExternalService
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-service`, {
       serviceName: `${clientPrefix}-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
-      desiredCount: 2,             
+      desiredCount: 2, 
      // circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
     });   
   
@@ -161,9 +161,6 @@ export class EcsAnywhereStack extends cdk.Stack {
         description: "Run installation script on VM",
         value: "sudo ./ecs-anywhere-install.sh  --region $REGION --cluster $CLUSTER_NAME --activation-id $ACTIVATION_ID --activation-code $ACTIVATION_CODE",
         exportName: "3-ExecuteInstallationScript",
-      });
-
-    
-
+      });  
   }
 }

@@ -74,8 +74,16 @@ export class NetBaseStack extends cdk.Stack {
     const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
       vpc: vpc,      
       zoneName: props.hosted, 
-      comment: `${props.envName} ECS MyLA`
-    });      
+      comment: `${props.envName} ECS MyLA`,
+      
+    });   
+
+    // const zone = new route53.PublicHostedZone(this, `${clientPrefix}-zone`, {         
+    //   zoneName: props.hosted, 
+    //   comment: `${props.envName} ECS MyLA`   
+    // });    
+    
+    // zone.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
     this.vpc = vpc;
     this.clientName = clientName;
