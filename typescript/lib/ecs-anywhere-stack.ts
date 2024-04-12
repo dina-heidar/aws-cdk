@@ -9,6 +9,7 @@ import * as rds from "aws-cdk-lib/aws-rds";
 import * as sm from "aws-cdk-lib/aws-secretsmanager";
 import { NagSuppressions } from 'cdk-nag';
 import * as ecr from "aws-cdk-lib/aws-ecr";
+import cluster from "cluster";
 
 interface EcsAnywhereStackProps extends cdk.StackProps {
     clientName: string;
@@ -42,7 +43,7 @@ export class EcsAnywhereStack extends cdk.Stack {
     const taskRole  = new iam.Role(this, `${clientPrefix}-anywhere-task-role`, {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       roleName: `${clientPrefix}-anywhere-task-role`,
-      description: "Role that the web anywhere task definitions use to run the web sample code",
+      description: "Role that the web anywhere task definitions use to run the web sample code",    
     });
 
     taskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"))
@@ -86,14 +87,14 @@ export class EcsAnywhereStack extends cdk.Stack {
     const taskDef = new ecs.ExternalTaskDefinition(this, `${clientPrefix}-task-anywhere-def`, {
         taskRole: taskRole ,
         family: `${clientPrefix}-ext-task`,
-        networkMode: ecs.NetworkMode.BRIDGE, //this should be bridge by default but just in case
+        networkMode: ecs.NetworkMode.BRIDGE, //this should be bridge by default but just in case        
     });
 
     taskDef.addToExecutionRolePolicy(executionRolePolicy);
 
     NagSuppressions.addResourceSuppressions(taskDef,[{id: 'AwsSolutions-IAM5',reason: 'Suppress all AwsSolutions-IAM5 findings'}],true);
- 
-    taskDef.addContainer(`${clientPrefix}-anywhere-web-container`, {   
+  
+    taskDef.addContainer(`${clientPrefix}-anywhere-web-container`, {        
         user: "1654",  
         memoryLimitMiB: 1024,
         image: image, //use the image from the ecr 
@@ -102,7 +103,10 @@ export class EcsAnywhereStack extends cdk.Stack {
             containerPort: 8443,
             //hostPort: 443 //remove host port so docker can assign one randomly
          }], 
-        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),
+        //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
+        //https://github.com/aws/amazon-ecs-agent/blob/master/README.md
+        //https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-anywhere-registration.html#ecs-anywhere-registration
+        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }), 
         secrets: {
           "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
           "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
@@ -122,18 +126,17 @@ export class EcsAnywhereStack extends cdk.Stack {
         }        
       });    
   
-    //Create ExternalService
-    interface ExternalServiceProps extends ecs.BaseServiceProps {
-      placementStrategies?: ecs.PlacementStrategy[];
-    }
 
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-service`, {
       serviceName: `${clientPrefix}-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
-      desiredCount: 3,      
-    });   
-  
+      desiredCount: 2,
+      maxHealthyPercent:500,
+      minHealthyPercent: 50,
+    }); 
+    
+    //service.taskDefinition.addPlacementConstraint(ecs.PlacementConstraint.memberOf());
     this.service = service;   
 
     // Create IAM Role   

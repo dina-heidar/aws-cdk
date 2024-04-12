@@ -81,7 +81,7 @@ export class NetBaseStack extends cdk.Stack {
       comment: `${props.envName} ECS MyLA`   
     });    
     
-    //zone.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+    zonePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
     this.vpc = vpc;
     this.clientName = clientName;
