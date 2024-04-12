@@ -85,7 +85,8 @@ export class EcsAnywhereStack extends cdk.Stack {
     // Create ExternalTaskDefinition
     const taskDef = new ecs.ExternalTaskDefinition(this, `${clientPrefix}-task-anywhere-def`, {
         taskRole: taskRole ,
-        family: `${clientPrefix}-ext-task`
+        family: `${clientPrefix}-ext-task`,
+        networkMode: ecs.NetworkMode.BRIDGE, //this should be bridge by default but just in case
     });
 
     taskDef.addToExecutionRolePolicy(executionRolePolicy);
@@ -96,12 +97,12 @@ export class EcsAnywhereStack extends cdk.Stack {
         user: "1654",  
         memoryLimitMiB: 1024,
         image: image, //use the image from the ecr 
-        containerName: `${clientPrefix}-anywhere-web-container`, 
+        containerName: `${clientPrefix}-anywhere-web-container`,
         portMappings: [{ 
             containerPort: 8443,
             hostPort: 443
          }], 
-        logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),
+        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),
         secrets: {
           "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
           "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
@@ -122,12 +123,15 @@ export class EcsAnywhereStack extends cdk.Stack {
       });    
   
     //Create ExternalService
+    interface ExternalServiceProps extends ecs.BaseServiceProps {
+      placementStrategies?: ecs.PlacementStrategy[];
+    }
+
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-service`, {
       serviceName: `${clientPrefix}-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
-      desiredCount: 2, 
-     // circuitBreaker: { rollback: true }, //to stop and rollback instead of running for hours trying to fix itself
+      desiredCount: 1,      
     });   
   
     this.service = service;   

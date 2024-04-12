@@ -29,8 +29,7 @@ export class NetBaseStack extends cdk.Stack {
     super(scope, id, props);
        
     const clientName = props.clientName;
-    const clientPrefix = `${clientName}-${props.envName}`;
-    //const hosted = `${props.envName}.${clientName}.${props.domain}`;
+    const clientPrefix = `${clientName}-${props.envName}`;   
 
     //vpc resources
     //TODO: do a lookup and see if that vpc exists
@@ -71,19 +70,18 @@ export class NetBaseStack extends cdk.Stack {
       clusterName: `${clientPrefix}-ecs-anywhere-cluster`,    
     });     
 
-    const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
-      vpc: vpc,      
-      zoneName: props.hosted, 
-      comment: `${props.envName} ECS MyLA`,
-      
-    });   
-
-    // const zone = new route53.PublicHostedZone(this, `${clientPrefix}-zone`, {         
+    // const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
+    //   vpc: vpc,      
     //   zoneName: props.hosted, 
-    //   comment: `${props.envName} ECS MyLA`   
-    // });    
+    //   comment: `${props.envName} ECS MyLA`,      
+    // });   
+
+    const zonePublic = new route53.PublicHostedZone(this, `${clientPrefix}-public-zone`, {         
+      zoneName: props.hosted, 
+      comment: `${props.envName} ECS MyLA`   
+    });    
     
-    // zone.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+    //zone.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
     this.vpc = vpc;
     this.clientName = clientName;
@@ -91,7 +89,7 @@ export class NetBaseStack extends cdk.Stack {
     this.cluster = cluster;   
     this.clusterAnywhere = clusterAnywhere;  
     this.hosted = props.hosted;  
-    this.zone= zone;
+    this.zone= zonePublic;
 
     new cdk.CfnOutput(this, `${props.envName}-clusterName`, {
       exportName: `${props.envName}-clusterName`,
