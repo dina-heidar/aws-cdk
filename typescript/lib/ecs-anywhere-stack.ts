@@ -100,7 +100,7 @@ export class EcsAnywhereStack extends cdk.Stack {
         containerName: `${clientPrefix}-anywhere-web-container`,
         portMappings: [{ 
             containerPort: 8443,
-            hostPort: 443
+            //hostPort: 443 //remove host port so docker can assign one randomly
          }], 
         //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),
         secrets: {
@@ -131,7 +131,7 @@ export class EcsAnywhereStack extends cdk.Stack {
       serviceName: `${clientPrefix}-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
-      desiredCount: 1,      
+      desiredCount: 3,      
     });   
   
     this.service = service;   
