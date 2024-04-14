@@ -11,6 +11,7 @@ interface NetBaseStackProps extends cdk.StackProps {
   clientName: string;
   envName: string;
   hosted: string;
+  hostedAnywhere:string;
   region: string;
   cidr: string;
 }
@@ -23,6 +24,7 @@ export class NetBaseStack extends cdk.Stack {
   public readonly cluster : ecs.ICluster; 
   public readonly clusterAnywhere : ecs.ICluster; 
   public readonly hosted: string;
+  public readonly hostedAnywhere: string;
   public readonly zone: route53.IHostedZone;
 
   constructor(scope: Construct, id: string, props: NetBaseStackProps) {
@@ -83,12 +85,20 @@ export class NetBaseStack extends cdk.Stack {
     
     zonePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
+    const zoneAnywherePublic = new route53.PublicHostedZone(this, `${clientPrefix}-anywhere-public-zone`, {         
+      zoneName: props.hostedAnywhere, 
+      comment: `${props.envName} ECS Anywhere MyLA`   
+    });    
+
+    zoneAnywherePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+
     this.vpc = vpc;
     this.clientName = clientName;
     this.envName = props.envName; 
     this.cluster = cluster;   
     this.clusterAnywhere = clusterAnywhere;  
     this.hosted = props.hosted;  
+    this.hostedAnywhere = props.hostedAnywhere;
     this.zone= zonePublic;
 
     new cdk.CfnOutput(this, `${props.envName}-clusterName`, {

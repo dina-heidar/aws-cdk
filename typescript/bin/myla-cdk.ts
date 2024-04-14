@@ -5,6 +5,7 @@ import { EcsStack } from '../lib/ecs-stack';
 import { EcsAnywhereStack } from '../lib/ecs-anywhere-stack';
 import { StateFulStack } from '../lib/stateful-stack';
 import { NetBaseStack } from '../lib/netBase-stack';
+import { LoadBalancerStack } from '../lib/load-balancer-stack';
 
 enum EnvName{
   DEV = "dev",
@@ -18,6 +19,7 @@ const netBaseStack = new NetBaseStack(app, 'NetBaseStack', {
   clientName: 'dina', //'ots-CCoE',
   envName: EnvName.DEV,
   hosted: "ecs.my.la.gov",
+  hostedAnywhere: "ecs-anywhere.my.la.gov",
   region: "us-east-1",
   cidr: "10.13.0.0/16",
   env
@@ -54,6 +56,16 @@ new EcsAnywhereStack(app, 'EcsAnywhereStack', {
   region: netBaseStack.region,  
   env
 });
+
+// new LoadBalancerStack(app, 'LoadBalancerStack', {
+//   clientName: netBaseStack.clientName,
+//   envName: netBaseStack.envName,    
+//   cluster: netBaseStack.clusterAnywhere, 
+//   hosted: netBaseStack.hosted,
+//   hostname:"ecs-anywhere.my.la.gov",
+//   region: netBaseStack.region,  
+//   env
+// });
 
 cdk.Tags.of(app).add('client', netBaseStack.clientName);
 cdk.Tags.of(app).add('environemnt', netBaseStack.envName);
