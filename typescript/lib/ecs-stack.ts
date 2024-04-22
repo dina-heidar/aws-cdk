@@ -72,7 +72,7 @@ export class EcsStack extends cdk.Stack {
     environment: {
       ASPNETCORE_ENVIRONMENT: "Docker",          
       ASPNETCORE_URLS:"https://*:8443;http://*:8080" ,
-      ASPNETCORE_Kestrel__Certificates__Default__Password:"1234", //TODO put this in password section
+      ASPNETCORE_Kestrel__Certificates__Default__Password:"1234", //TODO put this in secrets section?
       ASPNETCORE_Kestrel__Certificates__Default__Path: "/usr/local/share/ca-certificates/localhost.pfx",
       "DB_HOST": props.rds.instanceEndpoint.hostname,
       "DB_PORT": props.rds.instanceEndpoint.port.toString(),

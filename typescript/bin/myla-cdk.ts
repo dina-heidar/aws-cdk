@@ -15,7 +15,7 @@ enum EnvName{
 const app = new cdk.App();
 const env = {account: '654654599146',  region: 'us-east-1' }
 
-const netBaseStack = new NetBaseStack(app, 'NetBaseStack', {
+const netBaseStack = new NetBaseStack(app, 'NetBaseStack', {  
   clientName: 'dina', //'ots-CCoE',
   envName: EnvName.DEV,
   hosted: "ecs.my.la.gov",
@@ -47,6 +47,7 @@ new EcsStack(app, 'EcsStack', {
 });
 
 new EcsAnywhereStack(app, 'EcsAnywhereStack', {     
+  description: "ECS Anywhere Stack",
   clientName: netBaseStack.clientName,
   envName: netBaseStack.envName,    
   cluster: netBaseStack.clusterAnywhere,
@@ -57,15 +58,16 @@ new EcsAnywhereStack(app, 'EcsAnywhereStack', {
   env
 });
 
-// new LoadBalancerStack(app, 'LoadBalancerStack', {
-//   clientName: netBaseStack.clientName,
-//   envName: netBaseStack.envName,    
-//   cluster: netBaseStack.clusterAnywhere, 
-//   hosted: netBaseStack.hosted,
-//   hostname:"ecs-anywhere.my.la.gov",
-//   region: netBaseStack.region,  
-//   env
-// });
+new LoadBalancerStack(app, 'LoadBalancerStack', {
+  description: "Traefik Proxy/Load Balancer Stack",
+  clientName: netBaseStack.clientName,
+  envName: netBaseStack.envName,    
+  cluster: netBaseStack.clusterAnywhere, 
+  hosted: netBaseStack.hosted,
+  hostnameAnywhere:"ecs-anywhere.my.la.gov",
+  region: netBaseStack.region,  
+  env
+});
 
 cdk.Tags.of(app).add('client', netBaseStack.clientName);
 cdk.Tags.of(app).add('environemnt', netBaseStack.envName);

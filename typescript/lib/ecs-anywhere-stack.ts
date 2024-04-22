@@ -23,7 +23,7 @@ interface EcsAnywhereStackProps extends cdk.StackProps {
 
   //TODO create Traefik Proxy
 export class EcsAnywhereStack extends cdk.Stack {
-
+  
     public readonly service: ecs.ExternalService;
     public readonly repo: codecommit.Repository;
   
@@ -86,7 +86,7 @@ export class EcsAnywhereStack extends cdk.Stack {
     // Create ExternalTaskDefinition
     const taskDef = new ecs.ExternalTaskDefinition(this, `${clientPrefix}-task-anywhere-def`, {
         taskRole: taskRole ,
-        family: `${clientPrefix}-ext-task`,
+        family: "ecs-anywhere",
         networkMode: ecs.NetworkMode.BRIDGE, //this should be bridge by default but just in case        
     });
 
@@ -98,11 +98,20 @@ export class EcsAnywhereStack extends cdk.Stack {
         user: "1654",  
         memoryLimitMiB: 1024,
         image: image, //use the image from the ecr 
-        containerName: `${clientPrefix}-anywhere-web-container`,
+        containerName: "ecs-anywhere",
         portMappings: [{ 
             containerPort: 8443,
             //hostPort: 443 //remove host port so docker can assign one randomly
          }], 
+         dockerLabels: {
+          "traefik.enable":"true",
+          "traefik.http.services.ecs-anywhere.loadbalancer.server.port": "8443",
+          "traefik.http.routers.ecs-anywhere.entrypoints":"web-secure",
+          "traefik.http.routers.ecs-anywhere.tls":"true",
+          "traefik.http.routers.ecs-anywhere.service":"ecs-anywhere",
+          "traefik.http.routers.ecs-anywhere-host.rule": "Host(`10.4.14.176`)",      
+          "traefik.http.services.ecs-anywhere.loadbalancer.server.scheme":"https",
+        },
         //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
         //https://github.com/aws/amazon-ecs-agent/blob/master/README.md
         //https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-anywhere-registration.html#ecs-anywhere-registration
@@ -134,9 +143,9 @@ export class EcsAnywhereStack extends cdk.Stack {
       desiredCount: 2,
       maxHealthyPercent:500,
       minHealthyPercent: 50,
-    }); 
-    
-    //service.taskDefinition.addPlacementConstraint(ecs.PlacementConstraint.memberOf());
+    });     
+     
+    service.taskDefinition.addPlacementConstraint(ecs.PlacementConstraint.memberOf("attribute:role1 == webserver"));
     this.service = service;   
 
     // Create IAM Role   
