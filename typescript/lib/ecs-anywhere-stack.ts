@@ -9,7 +9,6 @@ import * as rds from "aws-cdk-lib/aws-rds";
 import * as sm from "aws-cdk-lib/aws-secretsmanager";
 import { NagSuppressions } from 'cdk-nag';
 import * as ecr from "aws-cdk-lib/aws-ecr";
-import cluster from "cluster";
 
 interface EcsAnywhereStackProps extends cdk.StackProps {
     clientName: string;
@@ -21,7 +20,6 @@ interface EcsAnywhereStackProps extends cdk.StackProps {
     region: string;
   }
 
-  //TODO create Traefik Proxy
 export class EcsAnywhereStack extends cdk.Stack {
   
     public readonly service: ecs.ExternalService;
@@ -98,7 +96,7 @@ export class EcsAnywhereStack extends cdk.Stack {
         user: "1654",  
         memoryLimitMiB: 1024,
         image: image, //use the image from the ecr 
-        containerName: "ecs-anywhere",
+        containerName: "myla-ecs-anywhere-container",
         portMappings: [{ 
             containerPort: 8443,
             //hostPort: 443 //remove host port so docker can assign one randomly
@@ -110,6 +108,7 @@ export class EcsAnywhereStack extends cdk.Stack {
           "traefik.http.routers.ecs-anywhere.tls":"true",
           "traefik.http.routers.ecs-anywhere.service":"ecs-anywhere",
           "traefik.http.routers.ecs-anywhere-host.rule": "Host(`10.4.14.176`)",      
+          "traefik.http.routers.ecs-anywhere.rule": "Host(`ecs-anywhere.my.la.gov`)",      
           "traefik.http.services.ecs-anywhere.loadbalancer.server.scheme":"https",
         },
         //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
@@ -135,9 +134,8 @@ export class EcsAnywhereStack extends cdk.Stack {
         }        
       });    
   
-
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-service`, {
-      serviceName: `${clientPrefix}-ecs-anywhere-service`,       
+      serviceName: `myla-ecs-anywhere-service`,       
       cluster: props.cluster,
       taskDefinition : taskDef,      
       desiredCount: 2,
@@ -159,8 +157,7 @@ export class EcsAnywhereStack extends cdk.Stack {
       })
       instance_iam_role.withoutPolicyUpdates();
       NagSuppressions.addResourceSuppressions(instance_iam_role,[{id: 'AwsSolutions-IAM4', reason: 'at least 10 characters'}])
-  
-  
+    
       new CfnOutput(this, "RegisterExternalInstance", {
         description: "Create an Systems Manager activation pair",
         value: `aws ssm create-activation --iam-role ${instance_iam_role.roleName} | tee ssm-activation.json`,

@@ -5,7 +5,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as codecommit from 'aws-cdk-lib/aws-codecommit';
 import { ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import * as ecr from "aws-cdk-lib/aws-ecr";
-import * as sm from "aws-cdk-lib/aws-secretsmanager";
 import { NagSuppressions } from 'cdk-nag';
 
 interface LoadBalancerStackProps extends cdk.StackProps {
@@ -17,7 +16,6 @@ interface LoadBalancerStackProps extends cdk.StackProps {
     hostnameAnywhere: string
   }
 
-  //TODO create Traefik Proxy
 export class LoadBalancerStack extends cdk.Stack {
 
     public readonly service: ecs.ExternalService;
@@ -42,7 +40,6 @@ export class LoadBalancerStack extends cdk.Stack {
         taskRoleTraefik.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
         NagSuppressions.addResourceSuppressions(taskRoleTraefik ,[{id: 'AwsSolutions-IAM4', reason: 'atleast 10 characters'}]);
 
-  
         // Grant access to Create Log group and Log Stream
         taskRoleTraefik.addToPolicy(
         new iam.PolicyStatement({
@@ -103,13 +100,10 @@ export class LoadBalancerStack extends cdk.Stack {
   
     NagSuppressions.addResourceSuppressions(taskTraefikDef,[{id: 'AwsSolutions-IAM5',reason: 'Suppress all AwsSolutions-IAM5 findings'}],true);     
 
-    // const certKey = sm.Secret.fromSecretCompleteArn(this, "traefikSSLKEY","arn:aws:secretsmanager:us-east-1:654654599146:secret:traefikSSLKEY-xLwbFk");
-    // const certCrt = sm.Secret.fromSecretCompleteArn(this, "traefikSSLCRT","arn:aws:secretsmanager:us-east-1:654654599146:secret:traefikSSLCRT-s3xTmv");   
-   
     const container =taskTraefikDef.addContainer(`${clientPrefix}-anywhere-loadBalancer-Traefik-container`, { 
         memoryLimitMiB: 1024, 
         image: image, //use the image from the ecr 
-        containerName: `${clientPrefix}-anywhere-traefik-container`,
+        containerName: `traefik-container`,
         hostname: props.hostnameAnywhere,   
         cpu: 256,
         memoryReservationMiB: 128,       
@@ -131,11 +125,7 @@ export class LoadBalancerStack extends cdk.Stack {
             hostPort: 8080 //will redirect to 443
          }
         ],  
-         command: [     
-            // "/bin/sh",
-            // "-c",
-            // "echo $CERT_VALUE > /etc/certs/traefikSSL.key",
-            // "echo $KEY_VALUE > /etc/certs/traefikSSL.crt",       
+         command: [  
             "--api.dashboard=true",
             "--api.insecure=true",
             "--accesslog=true",
@@ -143,67 +133,30 @@ export class LoadBalancerStack extends cdk.Stack {
             "--providers.ecs.region=us-east-1",
             "--providers.ecs.autoDiscoverClusters=true",
             "--providers.ecs.exposedByDefault=true",
-           // "--providers.file.directory=/etc/traefik/dynamic",
             "--entryPoints.web.address=:80",
-            //"--entryPoints.web.address=:8080",
             "--entryPoints.web-secure.address=:443", 
-            "--serverstransport.insecureskipverify=true"                    
-            // "--certificatesresolvers.route53.acme.email=dina.heidar@la.gov",
-            // "--certificatesresolvers.route53.acme.storage=./acme.json",
-            // "--certificatesresolvers.route53.acme.tlschallenge=true"
+            "--serverstransport.insecureskipverify=true"          
          ],  
          dockerLabels: {
           //# Global HTTP to HTTPS redirect
           "entrypoints.web.http.redirections.entryPoint.to":"web-secure",
           "entrypoints.web.http.redirections.entryPoint.scheme":"https",
           "entrypoints.web.http.redirections.entrypoint.permanent":"true",
-
-           // "traefik.http.routers.traefik.rule":"Host(`dashboard.${PRIMARY_DOMAIN}`)",
-           // "traefik.http.routers.traefik.service":"api@internal",
-           // "traefik.http.routers.traefik.tls":"true",
-           // "traefik.http.routers.traefik.tls.certresolver":"route53",
-           // "traefik.http.routers.traefik.entrypoints":"websecure",
-                    // global redirect to https
-            "traefik.http.routers.http-catchall.rule":"HostRegexp(`{host:.+}`)",
-            "traefik.http.routers.http-catchall.entrypoints":"web-secure",
-            "traefik.http.routers.http-catchall.middlewares":"redirect-to-https"
          }, 
         //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
         //https://github.com/aws/amazon-ecs-agent/blob/master/README.md
         //https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-anywhere-registration.html#ecs-anywhere-registration
-        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),        
-        // secrets: {
-        //     "KEY_VALUE":ecs.Secret.fromSecretsManager(certKey), 
-        //     "CERT_VALUE":ecs.Secret.fromSecretsManager(certCrt) 
-        // },
-        // mountPoints: [
-        //   {TmpfsMountOption}
-        // ]
+        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),               
     });  
-    
-    
-    //mount the volume to the container
-    // container.addMountPoints({      
-    //     sourceVolume: traefikConfig,
-    //     containerPath: "/etc/traefik/dynamic/",
-    //     readOnly: false,
-    // }); 
-
-    // container.addMountPoints({
-    //     sourceVolume: certs,
-    //     containerPath: "/etc/certs/",
-    //     readOnly: false,
-    // }); 
-   
 
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-traefik-service`, {
-        serviceName: `${clientPrefix}-ecs-anywhere-traefik-service`,       
+        serviceName: `traefik-service`,       
         cluster: props.cluster,
         taskDefinition : taskTraefikDef,      
         desiredCount: 1        
       }); 
 
-      //can't do this unless we have custom attributes set on the external instance
+       //can't do this unless we have custom attributes set on the external instance
         service.taskDefinition.addPlacementConstraint(ecs.PlacementConstraint.memberOf("attribute:role2 == loadbalancer"));
         this.service = service; 
         
