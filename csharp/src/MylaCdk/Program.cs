@@ -1,43 +1,50 @@
 ﻿using Amazon.CDK;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace MylaCdk
+namespace MyLACdk
 {
     sealed class Program
     {
+        public class EnvName
+        {
+            public const string DEV = "dev";
+            public const string PROD = "prod";
+        }
+
         public static void Main(string[] args)
         {
-            var app = new App();
-            new MylaCdkStack(app, "MylaCdkStack", new StackProps
+            // The account and region in which this stack is deployed.
+            var env = new Amazon.CDK.Environment
             {
-                // If you don't specify 'env', this stack will be environment-agnostic.
-                // Account/Region-dependent features and context lookups will not work,
-                // but a single synthesized template can be deployed anywhere.
+                Account = "654654599146",
+                Region = "us-east-1"
+            };
+            var app = new App();
 
-                // Uncomment the next block to specialize this stack for the AWS Account
-                // and Region that are implied by the current CLI configuration.
-                /*
-                Env = new Amazon.CDK.Environment
-                {
-                    Account = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_ACCOUNT"),
-                    Region = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_REGION"),
-                }
-                */
+            // A CDK app can contain multiple stacks. You can view a list of all the stacks in your
+            // app by typing `cdk list`.
 
-                // Uncomment the next block if you know exactly what Account and Region you
-                // want to deploy the stack to.
-                /*
-                Env = new Amazon.CDK.Environment
-                {
-                    Account = "123456789012",
-                    Region = "us-east-1",
-                }
-                */
-
-                // For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+            //creates vpc, subnets, clusters, hosted zone
+            var netBaseCStack = new NetBaseCStack(app, "NetBaseCStack", new NetBaseCProps
+            {
+                ClientName = "dina", //agency name?
+                EnvName = EnvName.DEV,
+                Hosted = "ecs.my.la.gov",
+                HostedAnywhere = "ecs-anywhere.my.la.gov",
+                Cidr = "10.13.0.0/16",
+                Env = env
             });
+
+            //creates caching db
+            new StateFulCStack(app, "StateFulCStack", new StateFulCProps
+            {
+                ClientName = netBaseCStack.clientName,
+                EnvName = EnvName.DEV,
+                Vpc = netBaseCStack.vpc,
+                Cluster = netBaseCStack.cluster,
+                ClusterAnywhere = netBaseCStack.clusterAnywhere,
+                Env = env
+            });
+
             app.Synth();
         }
     }

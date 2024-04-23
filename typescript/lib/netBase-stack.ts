@@ -12,7 +12,6 @@ interface NetBaseStackProps extends cdk.StackProps {
   envName: string;
   hosted: string;
   hostedAnywhere:string;
-  region: string;
   cidr: string;
 }
 
@@ -42,12 +41,6 @@ export class NetBaseStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.cidr("10.13.0.0/16"),    
       enableDnsHostnames: true,  
       enableDnsSupport: true,
-      // flowLogs: { 
-      //   VpcFlowlogs: {
-      //   destination: ec2.FlowLogDestination.toCloudWatchLogs(),
-      //   trafficType: ec2.FlowLogTrafficType.ALL,
-      //   },
-      // },
       subnetConfiguration: [
         {
           name: `${clientPrefix}-private-subnet`,
@@ -72,25 +65,12 @@ export class NetBaseStack extends cdk.Stack {
       clusterName: `${clientPrefix}-ecs-anywhere-cluster`,    
     });     
 
-    // const zone = new route53.PrivateHostedZone(this, `${clientPrefix}-zone`, {
-    //   vpc: vpc,      
-    //   zoneName: props.hosted, 
-    //   comment: `${props.envName} ECS MyLA`,      
-    // });   
-
     const zonePublic = new route53.PublicHostedZone(this, `${clientPrefix}-public-zone`, {         
       zoneName: props.hosted, 
       comment: `${props.envName} ECS MyLA`   
     });    
     
-    zonePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
-
-    const zoneAnywherePublic = new route53.PublicHostedZone(this, `${clientPrefix}-anywhere-public-zone`, {         
-      zoneName: props.hostedAnywhere, 
-      comment: `${props.envName} ECS Anywhere MyLA`   
-    });    
-
-    zoneAnywherePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+    zonePublic.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);    
 
     this.vpc = vpc;
     this.clientName = clientName;

@@ -12,19 +12,20 @@ enum EnvName{
   PROD = "prod"
 }
 
-const app = new cdk.App();
 const env = {account: '654654599146',  region: 'us-east-1' }
+const app = new cdk.App();
 
+//creates vpc, subnets, clusters, hosted zone
 const netBaseStack = new NetBaseStack(app, 'NetBaseStack', {  
-  clientName: 'dina', //'ots-CCoE',
+  clientName: 'dina', //agency name?
   envName: EnvName.DEV,
   hosted: "ecs.my.la.gov",
   hostedAnywhere: "ecs-anywhere.my.la.gov",
-  region: "us-east-1",
   cidr: "10.13.0.0/16",
   env
 });
 
+//creates caching db
 const statefulStack= new StateFulStack(app, 'StateFulStack', { 
   clientName: netBaseStack.clientName,
   envName: netBaseStack.envName,
