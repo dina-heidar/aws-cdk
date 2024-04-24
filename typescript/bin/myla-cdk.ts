@@ -54,7 +54,6 @@ new EcsAnywhereStack(app, 'EcsAnywhereStack', {
   cluster: netBaseStack.clusterAnywhere,
   rds: statefulStack.rds,
   hosted: netBaseStack.hosted,
-  certificateArn: 'arn:aws:acm:us-east-1:654654599146:certificate/72fcdfb5-addf-4846-8883-07c41e6edf40',
   region: netBaseStack.region,  
   env
 });
@@ -64,11 +63,10 @@ new LoadBalancerStack(app, 'LoadBalancerStack', {
   clientName: netBaseStack.clientName,
   envName: netBaseStack.envName,    
   cluster: netBaseStack.clusterAnywhere, 
-  hosted: netBaseStack.hosted,
   hostnameAnywhere:"ecs-anywhere.my.la.gov",
   region: netBaseStack.region,  
   env
 });
 
 cdk.Tags.of(app).add('client', netBaseStack.clientName);
-cdk.Tags.of(app).add('environemnt', netBaseStack.envName);
+cdk.Tags.of(app).add('environment', netBaseStack.envName);

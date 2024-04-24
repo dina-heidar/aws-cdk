@@ -53,19 +53,20 @@ export class EcsStack extends cdk.Stack {
   const image = ecs.ContainerImage.fromEcrRepository(repository, '1.2');  
   const cert = cm.Certificate.fromCertificateArn(this, `${props.hosted}-cert`, props.certificateArn);  
 
-  const taskDef = new ecs.TaskDefinition(this, `${clientPrefix}-task-def`, {
-    compatibility: ecs.Compatibility.FARGATE,
+  const taskDef = new ecs.FargateTaskDefinition(this, `${clientPrefix}-task-def`, {
     taskRole: taskRole,
-    family: `${clientPrefix}-task`,    
-    memoryMiB: "1024",
-    cpu: "512",
+    family: `${clientPrefix}-task`,  
+    memoryLimitMiB: 1024,  
+    cpu: 512,
   });
   taskDef.addContainer(`${clientPrefix}-web-container`, {   
-    user: "1654",  
-    image: image, //use the image from the ecr 
+    user: "1654",  //user defined in image
+    image: image, //use the image from the ecr for now
     containerName: `${clientPrefix}-web-container`,   
     portMappings: [{ containerPort: 8443 }], 
     logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-web-container` }),
+    
+    //these are the secrets that will be injected into the container as environment
     secrets: {
       "DB_PASSWORD": ecs.Secret.fromSecretsManager(dbSecret, 'password'),
       "DB_USER": ecs.Secret.fromSecretsManager(dbSecret, 'username'),
@@ -108,9 +109,11 @@ export class EcsStack extends cdk.Stack {
       protocol: elb2.Protocol.HTTPS,
     });    
    
+     // if we want to use sticky sessions
     // elbFargateService.targetGroup.enableCookieStickiness(cdk.Duration.hours(1), "MyLAAppCookie");
     const scalableTarget = elbFargateService.service.autoScaleTaskCount({ maxCapacity: 6, minCapacity: 2 });
 
+    //add an alias in Route53 that points to the load balancer 
     new route53.ARecord(this, `${props.hosted}-ARecord`, {
       recordName: props.hosted,
       target: route53.RecordTarget.fromAlias(
@@ -122,6 +125,8 @@ export class EcsStack extends cdk.Stack {
       zone: props.zone,
     });
      
+    //when to scale up or down
+    //scale up when cpu or memory is at 75%
     scalableTarget.scaleOnMemoryUtilization(`${clientPrefix}-ScaleUpMem`, {
       targetUtilizationPercent: 75,
     });
@@ -130,7 +135,7 @@ export class EcsStack extends cdk.Stack {
       targetUtilizationPercent: 75,
     });
 
-     // outputs to be used in code deployments
+     // cloud formation outputs
      new cdk.CfnOutput(this, `${props.envName}-serviceName`, {
       exportName: `${props.envName}-serviceName`,
       value: elbFargateService.service.serviceName,

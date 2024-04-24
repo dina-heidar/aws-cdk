@@ -11,7 +11,6 @@ interface LoadBalancerStackProps extends cdk.StackProps {
     clientName: string;
     envName: string;
     cluster: ecs.ICluster;
-    hosted: string;
     region: string;
     hostnameAnywhere: string
   }
@@ -91,6 +90,7 @@ export class LoadBalancerStack extends cdk.Stack {
       const repository = ecr.Repository.fromRepositoryName(this, 'traefik', 'traefik');
       const image = ecs.ContainerImage.fromEcrRepository(repository);      
 
+       // Create Traefik ExternalTaskDefinition
       const taskTraefikDef = new ecs.ExternalTaskDefinition(this, `${clientPrefix}-taskTraefik-anywhere-def`, {
         taskRole: taskRoleTraefik,      
         family: "loadbalancer",
@@ -146,9 +146,13 @@ export class LoadBalancerStack extends cdk.Stack {
         //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
         //https://github.com/aws/amazon-ecs-agent/blob/master/README.md
         //https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-anywhere-registration.html#ecs-anywhere-registration
-        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-web-container` }),               
+        //logging: ecs.LogDrivers.awsLogs({ streamPrefix: `${clientPrefix}-anywhere-traefik-container` }),               
     });  
 
+    //********************************************************************************
+    // If external instance is NOT registered yet :
+    //Run this section commented out first then
+    //after external instance is registered uncomment and run it again           
     const service = new ecs.ExternalService(this, `${clientPrefix}-ecs-anywhere-traefik-service`, {
         serviceName: `traefik-service`,       
         cluster: props.cluster,
@@ -156,10 +160,13 @@ export class LoadBalancerStack extends cdk.Stack {
         desiredCount: 1        
       }); 
 
-       //can't do this unless we have custom attributes set on the external instance
+        //make sure to add custom attribute first before running this
+        //to external instance using console UI
+        //can't find a way to add custom attributes yet in cdk
         service.taskDefinition.addPlacementConstraint(ecs.PlacementConstraint.memberOf("attribute:role2 == loadbalancer"));
         this.service = service; 
-        
+      //********************************************************************************
+ 
          // Create IAM Role   
     const instance_iam_role = new iam.Role(this, `${clientPrefix}-ecs-anywhere-traefik-role`, {
         roleName: `${clientPrefix}-ecs-anywhere-traefik-role`,
