@@ -68,5 +68,7 @@ new LoadBalancerStack(app, 'LoadBalancerStack', {
   env
 });
 
+//this will tag all the created resources
+//in all these stacks with these tags
 cdk.Tags.of(app).add('client', netBaseStack.clientName);
 cdk.Tags.of(app).add('environment', netBaseStack.envName);

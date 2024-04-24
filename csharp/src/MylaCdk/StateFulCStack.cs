@@ -18,7 +18,7 @@ namespace MyLACdk
 
     public class StateFulCStack : Stack
     {
-        public readonly IDatabaseInstance rds;
+        public readonly DatabaseInstance rds;
 
         // The code that defines your CF stack goes here
         public StateFulCStack(Construct scope, string id, StateFulCProps props = null)

@@ -35,7 +35,7 @@ namespace MyLACdk
             });
 
             //creates caching db
-            new StateFulCStack(app, "StateFulCStack", new StateFulCProps
+            var stateFulCStack = new StateFulCStack(app, "StateFulCStack", new StateFulCProps
             {
                 ClientName = netBaseCStack.clientName,
                 EnvName = EnvName.DEV,
@@ -45,6 +45,47 @@ namespace MyLACdk
                 Env = env
             });
 
+            new EcsCStack(app, "EcsCStack", new EcsCStackProps
+            {
+                ClientName = netBaseCStack.clientName,
+                EnvName = netBaseCStack.envName,
+                Cluster = netBaseCStack.cluster,
+                Rds = stateFulCStack.rds,
+                Hosted = netBaseCStack.hosted,
+                CertificateArn = "arn:aws:acm:us-east-1:654654599146:certificate/72fcdfb5-addf-4846-8883-07c41e6edf40",
+                Region = netBaseCStack.Region,
+                Zone = netBaseCStack.zone,
+                Env = env
+            });
+
+            new EcsAnywhereCStack(app, "EcsAnywhereCStack", new EcsAnywhereCStackProps
+            {
+                Description = "ECS Anywhere Stack",
+                ClientName = netBaseCStack.clientName,
+                EnvName = netBaseCStack.envName,
+                Cluster = netBaseCStack.clusterAnywhere,
+                Rds = stateFulCStack.rds,
+                Hosted = netBaseCStack.hosted,
+                Region = netBaseCStack.Region,
+                Env = env
+            });
+
+            new LoadBalancerCStack(app, "LoadBalancerCStack", new LoadBalancerCStackProps
+            {
+                Description= "Traefik Proxy/Load Balancer Stack",
+                ClientName = netBaseCStack.clientName,
+                EnvName = netBaseCStack.envName,
+                Cluster = netBaseCStack.cluster,               
+                HostnameAnywhere = netBaseCStack.hostedAnywhere,
+                Region = netBaseCStack.Region,
+                Env = env
+            });
+
+            //this will tag all the created resources
+            //in all these stacks with these tags
+            Tags.Of(app).Add("client", netBaseCStack.clientName);
+            Tags.Of(app).Add("environment", netBaseCStack.envName);
+            
             app.Synth();
         }
     }
