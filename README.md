@@ -18,7 +18,7 @@ Each project will create and deploy:
     * ALB (load balancer)
     * Route53 public host for subdomain for ALB as alias
 
-ECS Anywhere Cluster 
+* ECS Anywhere Cluster 
     * ECS Service, 
     * Task definition
     * Tasks
