@@ -10,11 +10,16 @@ An AWS certificate (ACM) was previously issued and secrets were stored in AWS Se
 
 ![Ecs Stack](EcsStack.png)
 
+
+## ECS Anywhere hosted on-premise 
+
+![Ecs Anywhere Stack](EcsStack-Anywhere.png)
+
 Each project is designed to create and deploy the following:
 
 * A Virtual Private Cloud (VPC)
 * Subnets
-* A SQL Server RDS instance for caching (this can be moved to private subnet later with a NAT)
+* A SQL Server RDS instance for caching (this can be moved to private subnet later and add a NAT)
 * An ECS Cluster, which includes:
     * An ECS Service
     * A Task Definition
