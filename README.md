@@ -1,32 +1,95 @@
 # ECS and ECS Anywhere Sample AWS CDK code
 
-This repo contains two projects, one written in typescript and the other written in C#. Both will produce the same resources.
+This repository hosts two projects, one developed in TypeScript and the other in C#. Both projects generate identical resources.
 
-The container images were exported to AWS ECR and extracted within the code. 
+Container images were exported to AWS ECR and are referenced within the code.
 
-ACM certificate was pre-issued and secrets were pre-populated into AWS Secret Store. The certificate and secrets are called used within the projects. 
+An AWS certificate (ACM) was previously issued and secrets were stored in AWS Secret Store in advance. This certificate which is used for the AWS load balancer (ALB) and secrets are utilized within the projects.
 
-Each project will create and deploy:
+Each project is designed to create and deploy the following:
 
-* VPC
+* A Virtual Private Cloud (VPC)
 * Subnets
-* Sql Server RDS for caching
-* ECS Cluster   
-    * ECS Service, 
-    * Task definition
+* A SQL Server RDS instance for caching
+* An ECS Cluster, which includes:
+    * An ECS Service
+    * A Task Definition
     * Tasks
-    * ALB (load balancer)
-    * Route53 public host for subdomain for ALB as alias
+    * An Application Load Balancer (ALB)
+    * A Route53 public host that serves as an alias for the ALB subdomain
+* An ECS Anywhere Cluster, which includes:
 
-* ECS Anywhere Cluster 
-    * ECS Service, 
-    * Task definition
+    * An ECS Service
+    * A Task Definition
     * Tasks
-    * Traefik (proxy/load balancer) which dynamically registers and connects to containers in the external instance
+    * A Traefik proxy/load balancer that identifies the ports and dynamically registers and connects to containers in the external instance.
 
-Currently AVI NSX Load Balancer connects to Traefik Proxy at port 443. 
+At present, the AVI NSX Load Balancer is connected to the Traefik Proxy on port 443.
 
-The entire project is TLS end-to-end. The deployed projects have been deployed at:
+The entire project is secured end-to-end with TLS. The deployed projects can be accessed at:
 
-https://ecs.my.la.gov
-https://ecs-anywhere.my.la.gov 
+* https://ecs.my.la.gov
+* https://ecs-anywhere.my.la.gov
+
+
+## Initial Setup:
+
+1. Ensure that you have an AWS account. If you have access to multiple accounts, you can set up a profile.
+2. Install the latest version of `aws cdk` using the following command:
+```
+npm install -g aws-cdk
+```
+3. For additional details, refer to steps 1-3 at the following link: https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html
+
+## Project Execution:
+
+### Csharp Project:
+
+1. Open the solution in Visual Studio to inspect the files. The `Program.cs` file, which is responsible for running the project, invokes and generates different stack files. Each file creates and deploys multiple resources, some of which are injected into other stacks for reference and usage.
+
+2. Navigate to the `csharp` folder using the CLI and locate the `cdk.json` file. Take note of the `app` property in the `cdk.json` file as it directs CDK to the project location.
+```
+cd /csharp
+```
+
+### Typescript Project:
+
+1. Open the project in Visual Studio Code to inspect the files. The `/bin/myla-cdk.ts` file, which is responsible for running the project, invokes and generates different stack files. Each file creates and deploys multiple resources, some of which are injected into other stacks for reference and usage. The stacks are in the `/lib/` folder.
+
+2. Navigate to the `typescript` folder using the CLI and locate the `cdk.json` file. Take note of the `app` property in the `cdk.json` file as it directs CDK to the project bootstrap location.
+
+## CDK Command Usage:
+
+1. Execute the following command to synthesize a CDK app into CloudFormation templates. The output will be created in the `/[language]/cdk.out` folder. The CloudFormation templates by default  are in `json` format.
+```
+cdk --profile [YOUR_PROFILE_NAME] synth
+```
+To generate a yaml formatted output (optional):
+```
+cdk --profile [YOUR_PROFILE_NAME] synth NetBaseStack >> cdk.out/NetBaseYaml.yaml  
+```
+2. To compare any changes between the deployed CloudFormation template and the local one, use:
+```
+cdk diff --profile [YOUR_PROFILE_NAME]
+```
+3. To deploy all the stacks:
+```
+cdk deploy --profile [YOUR_PROFILE_NAME] --all 
+```
+To deploy specific stacks:
+```
+cdk deploy --profile sandbox NetBaseStack StatefulStack  
+```
+
+4. To remove the stack:
+```
+cdk destroy --profile [YOUR_PROFILE_NAME] --all
+```
+
+## Notes
+
+If a deployment encounters an error for any reason, the AWS CloudFormation stack will automatically revert to its last successful version through a process known as rollback.
+
+Additional commands can be found at: https://www.npmjs.com/package/aws-cdk
+
+Sample projects are available at: https://github.com/aws-samples/aws-cdk-examples
