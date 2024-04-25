@@ -6,11 +6,15 @@ Container images were exported to AWS ECR and are referenced within the code.
 
 An AWS certificate (ACM) was previously issued and secrets were stored in AWS Secret Store in advance. This certificate which is used for the AWS load balancer (ALB) and secrets are utilized within the projects.
 
+## ECS hosted on AWS 
+
+![Ecs Stack](EcsStack.png)
+
 Each project is designed to create and deploy the following:
 
 * A Virtual Private Cloud (VPC)
 * Subnets
-* A SQL Server RDS instance for caching
+* A SQL Server RDS instance for caching (this can be moved to private subnet later with a NAT)
 * An ECS Cluster, which includes:
     * An ECS Service
     * A Task Definition
@@ -18,7 +22,6 @@ Each project is designed to create and deploy the following:
     * An Application Load Balancer (ALB)
     * A Route53 public host that serves as an alias for the ALB subdomain
 * An ECS Anywhere Cluster, which includes:
-
     * An ECS Service
     * A Task Definition
     * Tasks
