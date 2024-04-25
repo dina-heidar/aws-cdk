@@ -8,7 +8,12 @@ An AWS certificate (ACM) was previously issued and secrets were stored in AWS Se
 
 ## IMPORTANT 
 The deployed RDS in this project is used for caching and is being deployed for testing purposes ONLY. In a production scenario, this is not be ideal, please use elastic cache or something like Redis that is specifically used for  caching. The RDS was used here to show how a RDS could be deployed using CDK and how to set security groups with the ECS tasks. 
+
 The same RDS was re-used again in the ECS-Anywhere stack also for testing purposes instead of setting one up on-prem. In an on-prem production scenario, a caching database should be close to the application (container). 
+
+The RDS was placed in a public subnet, in a production scenario it should reside in the private subnet with a NAT deployed in thr public subnet for access. A lambda could also be written in CDK for database seeding. 
+
+The focus of this POC was to provision ECS containers in the cloud and on-premuse. 
 
 ## ECS hosted on AWS 
 
