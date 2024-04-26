@@ -6,14 +6,15 @@ Container images were exported to AWS ECR and are referenced within the code.
 
 An AWS certificate (ACM) was previously issued and secrets were stored in AWS Secret Store in advance. This certificate which is used for the AWS load balancer (ALB) and secrets are utilized within the projects.
 
-## IMPORTANT 
-The deployed RDS in this project is used for caching and is being deployed for testing purposes ONLY. In a production scenario, this is not be ideal, please use elastic cache or something like Redis that is specifically used for  caching. The RDS was used here to show how a RDS could be deployed using CDK and how to set security groups with the ECS tasks. 
+## NOTE
 
-The same RDS was re-used again in the ECS-Anywhere stack also for testing purposes instead of setting one up on-prem. In an on-prem production scenario, a caching database should be close to the application (container). 
+The RDS deployed in this project serves as a cache and is strictly for testing purposes ONLY. In a real-world production environment, it's not the best choice. Instead, consider using services like AWS Elastic Cache or Redis, which are specifically designed for caching. The RDS in this project demonstrates how to deploy an RDS using CDK and how to configure security groups with ECS tasks.
 
-The RDS was placed in a public subnet, in a production scenario it should reside in the private subnet with a NAT deployed in thr public subnet for access. A lambda could also be written in CDK for database seeding. 
+The same RDS was also utilized in the ECS-Anywhere stack for testing, rather than setting up a new one on-premises. In a production environment on-premises, the caching database should be located close to the application (container).
 
-The focus of this POC was to provision ECS containers in the cloud and on-premuse. 
+The RDS was positioned in a public subnet. However, in a production setup, it should be placed in a private subnet with a NAT set up in the public subnet for access. A lambda function could also be created in CDK for database seeding.
+
+The primary objective of this POC was to provision ECS containers both in the cloud and on-premises.
 
 ## ECS hosted on AWS 
 
