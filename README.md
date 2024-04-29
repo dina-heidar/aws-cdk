@@ -8,13 +8,12 @@ An AWS certificate (ACM) was previously issued and secrets were stored in AWS Se
 
 ## NOTE
 
-The RDS deployed in this project serves as a cache and is strictly for testing purposes ONLY. In a real-world production environment, it's not the best choice. Instead, consider using services like AWS Elastic Cache or Redis, which are specifically designed for caching. The RDS in this project demonstrates how to deploy an RDS using CDK and how to configure security groups with ECS tasks.
+This project demonstrates how to deploy an RDS using AWS CDK and how to set up security groups with ECS tasks (when hosted on AWS). The primary objective of this proof of concept is to provision ECS containers both in the cloud and on-premises. It is crucial to understand that **the RDS in this project is used as a cache and is strictly for testing purposes**. When considering production environments:
 
-The same RDS was also utilized in the ECS-Anywhere stack for testing, rather than setting up a new one on-premises. In a production environment on-premises, the caching database should be located close to the application (container).
-
-The RDS was positioned in a public subnet. However, in a production setup, it should be placed in a private subnet with a NAT set up in the public subnet for access. A lambda function could also be created in CDK for database seeding.
-
-The primary objective of this POC was to provision ECS containers both in the cloud and on-premises.
+1. The RDS in this project is situated in a public subnet. In a production setting, it should be placed in a private subnet with a NAT in the public subnet for access.
+1. RDS is not the best option for caching. Services like AWS Elastic Cache or Redis, which are specifically designed for caching, should be evaluated.
+1. The same RDS in this proof of concept was also utilized in the ECS-Anywhere stack for testing, rather than creating a new caching resource on-premises. It's worth noting that in a production setup on-premises, the cache database should ideally be located close as possible to the application (container).
+1. For database seeding, a lambda function or a DBUp container can be employed.
 
 ## ECS hosted on AWS 
 
