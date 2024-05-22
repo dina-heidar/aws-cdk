@@ -119,11 +119,21 @@ export class LoadBalancerStack extends cdk.Stack {
             hostPort: 80 //will redirect to port port 443
          },
          { 
-            //The Web UI (enabled by --api.insecure=true)
-            containerPort: 8080,
+          containerPort: 15672,
+          protocol: ecs.Protocol.TCP,
+          hostPort: 15672 
+          },         
+         { 
+            containerPort: 5672,
             protocol: ecs.Protocol.TCP,
-            hostPort: 8080 //will redirect to 443
-         }
+            hostPort: 5672 
+         },
+         { 
+          //The Web UI (enabled by --api.insecure=true)
+          containerPort: 8080,
+          protocol: ecs.Protocol.TCP,
+          hostPort: 8080 //will redirect to 443
+       }
         ],  
          command: [  
             "--api.dashboard=true",
@@ -134,11 +144,13 @@ export class LoadBalancerStack extends cdk.Stack {
             "--providers.ecs.autoDiscoverClusters=true",
             "--providers.ecs.exposedByDefault=true",
             "--entryPoints.web.address=:80",
-            "--entryPoints.web-secure.address=:443", 
-            "--serverstransport.insecureskipverify=true"          
+            "--entryPoints.web-secure.address=:443",             
+            "--entrypoints.rabbitMq-anywhere.address=:15672",
+            "--entrypoints.broker-anywhere.address=:5672/tcp",       
+            "--serverstransport.insecureskipverify=true", 
          ],  
          dockerLabels: {
-          //# Global HTTP to HTTPS redirect
+          //# Global HTTP at :80 to HTTPS redirect
           "entrypoints.web.http.redirections.entryPoint.to":"web-secure",
           "entrypoints.web.http.redirections.entryPoint.scheme":"https",
           "entrypoints.web.http.redirections.entrypoint.permanent":"true",

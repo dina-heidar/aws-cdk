@@ -3,6 +3,8 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { EcsStack } from '../lib/ecs-stack';
 import { EcsAnywhereStack } from '../lib/ecs-anywhere-stack';
+import { RabbitAnywhereStack } from '../lib/rabbit-anywhere-stack';
+import { RabbitStack } from "../lib/rabbit-stack";
 import { StateFulStack } from '../lib/stateful-stack';
 import { NetBaseStack } from '../lib/netBase-stack';
 import { LoadBalancerStack } from '../lib/load-balancer-stack';
@@ -50,12 +52,32 @@ new EcsStack(app, 'EcsStack', {
     env
 });
 
+new RabbitStack(app, 'RStack', {     
+  clientName: netBaseStack.clientName,
+  envName: netBaseStack.envName,    
+  cluster: netBaseStack.cluster, 
+  hosted: netBaseStack.hosted,
+  region: netBaseStack.region,
+  zone: netBaseStack.zone,
+  env
+});
+
 new EcsAnywhereStack(app, 'EcsAnywhereStack', {     
   description: "ECS Anywhere Stack",
   clientName: netBaseStack.clientName,
   envName: netBaseStack.envName,    
   cluster: netBaseStack.clusterAnywhere,
   rds: statefulStack.rds,
+  hosted: netBaseStack.hosted,
+  region: netBaseStack.region,  
+  env
+});
+
+new RabbitAnywhereStack(app, 'RsAnywhereStack', {     
+  description: "Anywhere Stack",
+  clientName: netBaseStack.clientName,
+  envName: netBaseStack.envName,    
+  cluster: netBaseStack.clusterAnywhere, 
   hosted: netBaseStack.hosted,
   region: netBaseStack.region,  
   env
@@ -74,4 +96,4 @@ new LoadBalancerStack(app, 'LoadBalancerStack', {
 //this will tag all the created resources
 //in all these stacks with these tags
 cdk.Tags.of(app).add('client', netBaseStack.clientName);
-cdk.Tags.of(app).add('environment', netBaseStack.envName);
+cdk.Tags.of(app).add('environemnt', netBaseStack.envName);

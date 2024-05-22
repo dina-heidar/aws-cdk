@@ -55,7 +55,7 @@ export class StateFulStack extends cdk.Stack {
 
       databaseCluster.connections.allowFrom(props.cluster, ec2.Port.tcp(dbPort), "Allow from fargate cluster");  
       databaseCluster.connections.allowFrom(props.clusterAnywhere, ec2.Port.tcp(dbPort), "Allow from ecs anywhere cluster");      
-      databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow to 1433");  
+      databaseCluster.connections.allowDefaultPortFromAnyIpv4("Allow from 1433");  
 
        //assign the output variables so they can be used in other stacks            
       this.rds = databaseCluster;
