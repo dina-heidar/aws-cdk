@@ -119,15 +119,20 @@ export class LoadBalancerStack extends cdk.Stack {
             hostPort: 80 //will redirect to port port 443
          },
          { 
-          containerPort: 15672,
+          containerPort: 15672, //rabbitMq-managment
           protocol: ecs.Protocol.TCP,
           hostPort: 15672 
           },         
          { 
-            containerPort: 5672,
+            containerPort: 5672, //rabbitMq-broker
             protocol: ecs.Protocol.TCP,
             hostPort: 5672 
          },
+         { 
+          containerPort: 15692, //rabbitMq-prometheus
+          protocol: ecs.Protocol.TCP,
+          hostPort: 15692 
+          }, 
          { 
           //The Web UI (enabled by --api.insecure=true)
           containerPort: 8080,
@@ -146,7 +151,8 @@ export class LoadBalancerStack extends cdk.Stack {
             "--entryPoints.web.address=:80",
             "--entryPoints.web-secure.address=:443",             
             "--entrypoints.rabbitMq-anywhere.address=:15672",
-            "--entrypoints.broker-anywhere.address=:5672/tcp",       
+            "--entrypoints.broker-anywhere.address=:5672/tcp", 
+            "--entrypoints.rabbitMq-prometheus.address=:15692",     
             "--serverstransport.insecureskipverify=true", 
          ],  
          dockerLabels: {

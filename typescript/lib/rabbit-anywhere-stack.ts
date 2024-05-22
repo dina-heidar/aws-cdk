@@ -87,8 +87,9 @@ export class RabbitAnywhereStack extends cdk.Stack {
         image: image, //use the image from the ecr 
         containerName: "mq-anywhere-container",
         portMappings: [
-          {containerPort: 15672 },
-          {containerPort: 5672}
+          {containerPort: 15672},
+          {containerPort: 5672},
+          {containerPort: 15692}
         ], 
          //these are needed for Traefik
          dockerLabels: {
@@ -99,10 +100,18 @@ export class RabbitAnywhereStack extends cdk.Stack {
           "traefik.http.routers.rabbitMq-anywhere.service":"rabbitMq-anywhere",
           "traefik.http.routers.rabbitMq-anywhere-host.rule": "Host(`rabbitMq-anywhere.la.gov`)" ,
 
+          "traefik.http.routers.rabbitMq-prometheus.entrypoints":"rabbitMq-prometheus",
+          "traefik.http.routers.rabbitMq-prometheus.rule": "Host(`10.4.14.176`)" ,         
+          "traefik.http.services.rabbitMq-prometheus.loadbalancer.server.port": "15692", 
+          "traefik.http.routers.rabbitMq-prometheus.service":"rabbitMq-prometheus",
+          "traefik.http.routers.rabbitMq-prometheuse-host.rule": "Host(`rabbitMq-prometheus.la.gov`)" ,
+
           "traefik.tcp.routers.broker-anywhere.entrypoints":"broker-anywhere",         
           "traefik.tcp.routers.broker-anywhere.rule": "HostSNI(`*`)",    
           "traefik.tcp.services.broker-anywhere.loadbalancer.server.port": "5672",  
           "traefik.tcp.routers.broker-anywhere.service":"broker-anywhere"
+
+          
         },
         //must set this logging in /etc/ecs/ecs.config as ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"] BEFORE registration       
         //https://github.com/aws/amazon-ecs-agent/blob/master/README.md
